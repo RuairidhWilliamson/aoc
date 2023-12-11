@@ -12,9 +12,7 @@ pub fn run(input: &str) {
             let b_index = match_index_backward(line);
             let a = convert_number(line, a_index);
             let b = convert_number(line, b_index);
-            let n = a * 10 + b;
-            println!("{n}");
-            n
+            a * 10 + b
         })
         .sum();
     println!("Total = {total}");

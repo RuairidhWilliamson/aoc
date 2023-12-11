@@ -117,22 +117,20 @@ fn run_cycle_method(
 
     println!("Finding lowest common Z");
     loop {
-        let first_pos = cycles[0].follow_cycle();
-        if cycles.iter().all(|c| c.follow_cycle() == first_pos) {
+        let max = cycles.iter().map(|c| c.follow_cycle()).max().unwrap();
+        let Some(c) = cycles.iter_mut().find(|c| c.follow_cycle() != max) else {
             break;
-        }
-        // let max = cycles.iter().map(|c| c.follow_cycle()).max().unwrap();
-        let c = cycles.iter_mut().min_by_key(|c| c.follow_cycle()).unwrap();
-        c.update_multiplier();
+        };
+        c.update_multiplier(max);
     }
-    println!("{cycles:#?}");
-    println!(
-        "{:?}",
-        cycles
-            .iter()
-            .map(|c| c.follow_cycle())
-            .collect::<Vec<usize>>()
-    );
+    // println!("{cycles:#?}");
+    // println!(
+    //     "{:?}",
+    //     cycles
+    //         .iter()
+    //         .map(|c| c.follow_cycle())
+    //         .collect::<Vec<usize>>()
+    // );
     cycles[0].follow_cycle()
 }
 
@@ -198,15 +196,12 @@ impl<'a> CycleTracker<'a> {
             + self.z_position.unwrap()
     }
 
-    fn update_multiplier(&mut self) {
-        // let new_mul =
-        //     (max - self.start_position - self.z_position.unwrap()) / self.cycle_length.unwrap();
-        // if new_mul == self.multiplier {
-        //     self.multiplier += 1;
-        // } else {
-        //     self.multiplier = new_mul;
-        // }
-        self.multiplier += 1;
+    fn update_multiplier(&mut self, max: usize) {
+        let num = max - self.start_position - self.z_position.unwrap();
+        let denom = self.cycle_length.unwrap();
+        let new_mul = num.div_ceil(denom);
+        self.multiplier = new_mul;
+        // self.multiplier += 1;
     }
 }
 

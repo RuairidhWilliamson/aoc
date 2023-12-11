@@ -80,7 +80,7 @@ fn find_enclosed_area(mut grid: Grid<Pipe>) -> usize {
     let mut l = VecDeque::new();
     let start = find_start(&grid).unwrap();
     l.push_front(start);
-    println!("{grid}");
+    // println!("{grid}");
     let ((mut c1, mut d1), (mut c2, mut d2)) = find_adj_start(&grid, start).unwrap();
     let start = grid.get_mut(start).unwrap();
     *start = Pipe::Section(d1.opposite(), d2.opposite());
@@ -140,7 +140,7 @@ fn find_enclosed_area(mut grid: Grid<Pipe>) -> usize {
         let c = grid.get_mut(*c).unwrap();
         *c = Pipe::Section(Direction::North, Direction::North);
     }
-    println!("{grid}");
+    // println!("{grid}");
     enclosed.len()
 }
 

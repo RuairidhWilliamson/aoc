@@ -18,7 +18,7 @@ mod d11;
 
 #[derive(Debug, Parser)]
 struct Cli {
-    day: usize,
+    day: Option<usize>,
 }
 
 const DAYS: &[fn(&str)] = &[
@@ -38,8 +38,23 @@ const DAYS: &[fn(&str)] = &[
 fn main() {
     let cli = Cli::parse();
 
-    let day = cli.day;
+    if let Some(day) = cli.day {
+        run_day(day);
+    } else {
+        (1..=DAYS.len()).for_each(|day| {
+            println!();
+            println!("-- Start Day {day} --");
+            run_day(day);
+            println!("-- End Day {day} --");
+        });
+    }
+}
+
+fn run_day(day: usize) {
+    if !(1..=DAYS.len()).contains(&day) {
+        panic!("day {day} out of range");
+    }
     let input_path = Path::new("inputs").join(format!("d{day:02}.txt"));
     let input = std::fs::read_to_string(input_path).unwrap();
-    DAYS[day - 1](&input)
+    DAYS[day - 1](&input);
 }

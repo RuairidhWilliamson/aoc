@@ -11,9 +11,9 @@ pub fn run(input: &str) {
         })
         .collect();
     hands.sort_unstable_by(|a, b| a.hand.cmp(&b.hand));
-    hands
-        .iter()
-        .for_each(|h| println!("{} {:?}", h.hand, h.hand.hand_type()));
+    // hands
+    //     .iter()
+    //     .for_each(|h| println!("{} {:?}", h.hand, h.hand.hand_type()));
     let total: usize = hands.iter().enumerate().map(|(i, h)| (i + 1) * h.bid).sum();
     println!("Total {total}");
 }
@@ -139,7 +139,7 @@ impl Hand {
             .map(|u| (u, self.cards.iter().filter(|&c| *c == u).count()))
             .collect();
         let joker_count: usize = self.cards.iter().filter(|&c| *c == Card::Joker).count();
-        println!("{counts:?} {joker_count:?}");
+        // println!("{counts:?} {joker_count:?}");
         if joker_count == 5 || counts.iter().any(|(_, count)| *count + joker_count == 5) {
             HandType::FiveOfAKind
         } else if counts.iter().any(|(_, count)| *count + joker_count == 4) {
