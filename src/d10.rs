@@ -1,16 +1,14 @@
 use std::{
+    cmp::Ordering,
     collections::{HashSet, VecDeque},
-    io::stdin,
 };
 
-use aoc::{
-    grid::{add_coords, sub_coords, Coord, Grid},
-    strum::{EnumIter, IntoEnumIterator},
-    thiserror::Error,
-};
+use strum::{EnumIter, IntoEnumIterator};
+use thiserror::Error;
 
-fn main() {
-    let s = std::io::read_to_string(stdin()).unwrap();
+use crate::common::grid::{add_coords, sub_coords, Coord, Grid};
+
+pub fn run(s: &str) {
     let grid: Grid<Pipe> = s.parse().unwrap();
     let d = find_furthest_pipe_length(&grid);
     println!("Length = {d}");
@@ -54,12 +52,12 @@ fn follow_pipe(
     };
     if d1 == from_direction {
         let c = add_coords(c, d2.relative_coord());
-        return Some((c, d2.opposite()));
+        Some((c, d2.opposite()))
     } else if d2 == from_direction {
         let c = add_coords(c, d1.relative_coord());
-        return Some((c, d1.opposite()));
+        Some((c, d1.opposite()))
     } else {
-        return None;
+        None
     }
 }
 
@@ -113,14 +111,16 @@ fn find_enclosed_area(mut grid: Grid<Pipe>) -> usize {
             }
         })
         .sum();
-    let side_func = if winding < 0 {
-        println!("right winding");
-        Direction::right
-    } else if winding > 0 {
-        println!("left winding");
-        Direction::left
-    } else {
-        panic!("winding is zero");
+    let side_func = match winding.cmp(&0) {
+        Ordering::Less => {
+            println!("right winding");
+            Direction::right
+        }
+        Ordering::Greater => {
+            println!("left winding");
+            Direction::left
+        }
+        Ordering::Equal => panic!("winding is zero"),
     };
     let mut enclosed = HashSet::new();
     (0..l.len())
@@ -230,8 +230,10 @@ enum Pipe {
     Section(Direction, Direction),
 }
 
-impl Pipe {
-    fn from_char(c: char) -> Result<Self, MyError> {
+impl TryFrom<char> for Pipe {
+    type Error = MyError;
+
+    fn try_from(c: char) -> Result<Self, MyError> {
         use Direction::*;
         match c {
             '|' => Ok(Self::Section(North, South)),
@@ -245,32 +247,34 @@ impl Pipe {
             c => Err(MyError::UnknownPipeChar(c)),
         }
     }
+}
 
-    fn as_char(&self) -> char {
+impl From<&Pipe> for char {
+    fn from(p: &Pipe) -> char {
         use Direction::*;
-        match self {
-            Self::Start => 'S',
-            Self::Ground => '@',
-            Self::Section(North, South) => '│',
-            Self::Section(East, West) => '─',
-            Self::Section(North, East) => '└',
-            Self::Section(North, West) => '┘',
-            Self::Section(South, West) => '┐',
-            Self::Section(South, East) => '┌',
-            Self::Section(_, _) => '#',
+        match p {
+            Pipe::Start => 'S',
+            Pipe::Ground => '@',
+            Pipe::Section(North, South) => '│',
+            Pipe::Section(East, West) => '─',
+            Pipe::Section(North, East) => '└',
+            Pipe::Section(North, West) => '┘',
+            Pipe::Section(South, West) => '┐',
+            Pipe::Section(South, East) => '┌',
+            Pipe::Section(_, _) => '#',
         }
     }
 }
 
-impl std::fmt::Display for Pipe {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.as_char())
-    }
+#[derive(Debug, Error)]
+enum MyError {
+    #[error("unknown char {0:?}")]
+    UnknownPipeChar(char),
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{
+    use super::{
         find_adj_start, find_enclosed_area, find_furthest_pipe_length, find_start, Direction, Grid,
         Pipe,
     };

@@ -1,0 +1,10 @@
+[package]
+name = "aoc"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.4.11", features = ["derive"] }
+rand = "0.8.5"
+strum = { version = "0.25", features = ["derive"] }
+thiserror = "1"

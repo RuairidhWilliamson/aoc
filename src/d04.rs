@@ -1,4 +1,4 @@
-use std::{io::stdin, num::ParseIntError, str::FromStr};
+use std::{num::ParseIntError, str::FromStr};
 
 pub fn run(input: &str) {
     run_inner(input).unwrap();
@@ -79,14 +79,12 @@ impl FromStr for Card {
         let winning = winning
             .trim()
             .split(' ')
-            .into_iter()
             .filter(|x| !x.is_empty())
             .map(|x| x.parse())
             .collect::<Result<Vec<usize>, ParseIntError>>()?;
         let numbers = numbers
             .trim()
             .split(' ')
-            .into_iter()
             .filter(|x| !x.is_empty())
             .map(|x| x.parse())
             .collect::<Result<Vec<usize>, ParseIntError>>()?;
