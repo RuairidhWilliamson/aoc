@@ -5,6 +5,15 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.4.11", features = ["derive"] }
+itertools = "0.12.0"
 rand = "0.8.5"
 strum = { version = "0.25", features = ["derive"] }
 thiserror = "1"
+lru = "0.12"
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "d12"
+harness = false
