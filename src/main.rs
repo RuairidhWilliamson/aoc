@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{io::stdin, path::Path};
 
 use clap::Parser;
 
@@ -17,10 +17,13 @@ mod d10;
 mod d11;
 mod d12;
 mod d13;
+mod d14;
 
 #[derive(Debug, Parser)]
 struct Cli {
     day: Option<usize>,
+    #[arg(long)]
+    stdin: bool,
 }
 
 const DAYS: &[fn(&str)] = &[
@@ -37,13 +40,18 @@ const DAYS: &[fn(&str)] = &[
     d11::run,
     d12::run,
     d13::run,
+    d14::run,
 ];
 
 fn main() {
     let cli = Cli::parse();
 
     if let Some(day) = cli.day {
-        run_day(day);
+        if cli.stdin {
+            run_day_with_stdin(day);
+        } else {
+            run_day(day);
+        }
     } else {
         (1..=DAYS.len()).for_each(|day| {
             println!();
@@ -60,5 +68,10 @@ fn run_day(day: usize) {
     }
     let input_path = Path::new("inputs").join(format!("d{day:02}.txt"));
     let input = std::fs::read_to_string(input_path).unwrap();
+    DAYS[day - 1](&input);
+}
+
+fn run_day_with_stdin(day: usize) {
+    let input = std::io::read_to_string(stdin()).unwrap();
     DAYS[day - 1](&input);
 }

@@ -10,9 +10,14 @@ rand = "0.8.5"
 strum = { version = "0.25", features = ["derive"] }
 thiserror = "1"
 lru = "0.12"
+kdam = "0.5.1"
 
 [dev-dependencies]
-criterion = "0.3"
+criterion = { version = "0.3", features = ["html_reports"] }
+
+[[bench]]
+name = "d08"
+harness = false
 
 [[bench]]
 name = "d12"

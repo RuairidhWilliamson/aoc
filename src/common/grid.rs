@@ -10,6 +10,7 @@ pub fn sub_coords(a: Coord, b: Coord) -> Coord {
     (a.0 - b.0, a.1 - b.1)
 }
 
+#[derive(Clone, PartialEq, Eq)]
 pub struct Grid<T> {
     elements: Vec<T>,
     width: isize,
@@ -40,6 +41,7 @@ impl<T> Grid<T> {
         self.elements.len() as isize / self.width
     }
 
+    /// Produces iterator over coords row by row
     pub fn enumerate_coords(&self) -> impl Iterator<Item = Coord> + '_ {
         (0..self.height()).flat_map(|y| (0..self.width()).map(move |x| (x, y)))
     }
