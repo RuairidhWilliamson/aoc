@@ -1,21 +1,25 @@
-pub fn run(input: &str) {
-    let total: isize = input
+use crate::PartFn;
+
+pub const PARTS: (PartFn, PartFn) = (part1, part2);
+
+fn part1(input: &str) -> isize {
+    input
         .lines()
         .map(|line| {
             let sequence = parse_sequence(line);
             next_element(&sequence)
         })
-        .sum();
-    println!("Prev element total = {total}");
+        .sum()
+}
 
-    let total: isize = input
+fn part2(input: &str) -> isize {
+    input
         .lines()
         .map(|line| {
             let sequence = parse_sequence(line);
             prev_element(&sequence)
         })
-        .sum();
-    println!("Prev element total = {total}");
+        .sum()
 }
 
 fn parse_sequence(sequence: &str) -> Vec<isize> {

@@ -2,10 +2,20 @@ use thiserror::Error;
 
 use crate::common::grid::Grid;
 
-pub fn run(input: &str) {
+use crate::PartFn;
+
+pub const PARTS: (PartFn, PartFn) = (part1, part2);
+
+fn part1(input: &str) -> isize {
+    let grid = input.parse().unwrap();
+    let total = total_dist(&grid, 2);
+    total as isize
+}
+
+fn part2(input: &str) -> isize {
     let grid = input.parse().unwrap();
     let total = total_dist(&grid, 1000000);
-    println!("{total}");
+    total as isize
 }
 
 fn expanded_rows(grid: &Grid<MapCell>) -> Vec<isize> {

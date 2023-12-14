@@ -1,18 +1,28 @@
-use kdam::tqdm;
-
 use crate::common::grid::Grid;
+use crate::PartFn;
 
-pub fn run(input: &str) {
-    let output = run_inner(input, 1000000000);
-    println!("{output}");
+pub const PARTS: (PartFn, PartFn) = (part1, part2);
+
+fn part1(input: &str) -> isize {
+    let mut grid: Grid<Cell> = input.parse().unwrap();
+    slide_grid_north(&mut grid);
+    north_beam_load(&grid)
 }
 
-fn run_inner(input: &str, cycles: usize) -> usize {
+fn part2(input: &str) -> isize {
+    run_inner(input, 1000000000)
+}
+
+fn run_inner(input: &str, cycles: usize) -> isize {
     let mut grid: Grid<Cell> = input.parse().unwrap();
     slide_grid(&mut grid, cycles);
 
     // println!("{grid}");
     // Calculate north beam load
+    north_beam_load(&grid)
+}
+
+fn north_beam_load(grid: &Grid<Cell>) -> isize {
     grid.enumerate_coords()
         .map(|c| {
             let cell = grid.get(c).unwrap();
@@ -21,14 +31,14 @@ fn run_inner(input: &str, cycles: usize) -> usize {
                 _ => 0,
             }
         })
-        .sum::<isize>() as usize
+        .sum::<isize>()
 }
 
 fn slide_grid(grid: &mut Grid<Cell>, cycles: usize) {
     let mut last_multiple_index = 0;
     let mut n: usize = 10;
     let mut last_multiple_of_four_grid: Option<Grid<Cell>> = None;
-    for i in tqdm!(0..cycles) {
+    for i in 0..cycles {
         if last_multiple_of_four_grid.as_ref() == Some(grid) {
             println!("Cycle found");
             let period = i - last_multiple_index;

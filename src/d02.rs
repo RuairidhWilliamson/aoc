@@ -4,6 +4,58 @@ use std::{collections::HashMap, num::ParseIntError, str::FromStr};
 
 use thiserror::Error;
 
+use crate::PartFn;
+
+pub const PARTS: (PartFn, PartFn) = (part1, part2);
+
+fn part1(input: &str) -> isize {
+    let games: Vec<Game> = input
+        .lines()
+        .map(|line| line.parse::<Game>())
+        .collect::<Result<Vec<Game>, MyError>>()
+        .expect("parse games");
+
+    // Part 1
+    let mut actual: HashMap<Color, usize> = HashMap::default();
+    actual.insert(Color::Red, 12);
+    actual.insert(Color::Green, 13);
+    actual.insert(Color::Blue, 14);
+    let total: usize = games
+        .iter()
+        .filter(|game| {
+            game.sets.iter().all(|s| {
+                actual
+                    .iter()
+                    .all(|(c, max_count)| s.counts.get(c).unwrap_or(&0) <= max_count)
+            })
+        })
+        .map(|game| game.id)
+        .sum();
+    total as isize
+}
+
+fn part2(input: &str) -> isize {
+    let games: Vec<Game> = input
+        .lines()
+        .map(|line| line.parse::<Game>())
+        .collect::<Result<Vec<Game>, MyError>>()
+        .expect("parse games");
+    let power_set_total: usize = games
+        .iter()
+        .map(|game| {
+            let mut max_counts: HashMap<Color, usize> = HashMap::new();
+            game.sets.iter().for_each(|s| {
+                s.counts.iter().for_each(|(&c, &count)| {
+                    let max = max_counts.entry(c).or_default();
+                    *max = count.max(*max);
+                });
+            });
+            max_counts.iter().map(|(_, &c)| c).product::<usize>()
+        })
+        .sum();
+    power_set_total as isize
+}
+
 #[derive(Debug)]
 struct Game {
     id: usize,
@@ -81,50 +133,4 @@ enum MyError {
     MissingColon,
     #[error("Missing game prefix")]
     MissingGamePrefix,
-}
-
-pub fn run(input: &str) {
-    run_inner(input).expect("d02 failed");
-}
-
-fn run_inner(input: &str) -> Result<(), MyError> {
-    let games: Vec<Game> = input
-        .lines()
-        .map(|line| line.parse::<Game>())
-        .collect::<Result<Vec<Game>, MyError>>()?;
-
-    // Part 1
-    let mut actual: HashMap<Color, usize> = HashMap::default();
-    actual.insert(Color::Red, 12);
-    actual.insert(Color::Green, 13);
-    actual.insert(Color::Blue, 14);
-    let total: usize = games
-        .iter()
-        .filter(|game| {
-            game.sets.iter().all(|s| {
-                actual
-                    .iter()
-                    .all(|(c, max_count)| s.counts.get(c).unwrap_or(&0) <= max_count)
-            })
-        })
-        .map(|game| game.id)
-        .sum();
-    println!("{total}");
-
-    // Part 2
-    let power_set_total: usize = games
-        .iter()
-        .map(|game| {
-            let mut max_counts: HashMap<Color, usize> = HashMap::new();
-            game.sets.iter().for_each(|s| {
-                s.counts.iter().for_each(|(&c, &count)| {
-                    let max = max_counts.entry(c).or_default();
-                    *max = count.max(*max);
-                });
-            });
-            max_counts.iter().map(|(_, &c)| c).product::<usize>()
-        })
-        .sum();
-    println!("{power_set_total}");
-    Ok(())
 }

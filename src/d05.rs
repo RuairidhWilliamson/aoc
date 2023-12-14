@@ -1,33 +1,59 @@
 use std::{num::ParseIntError, ops::Range, str::FromStr};
 
-pub fn run(input: &str) {
-    run_inner(input).expect("d05 failed");
-}
+use crate::PartFn;
 
-fn run_inner(input: &str) -> Result<(), MyError> {
+pub const PARTS: (PartFn, PartFn) = (part1, part2);
+
+fn part1(input: &str) -> isize {
     let mut lines = input.lines();
 
     let seeds = lines
         .next()
-        .ok_or(MyError::MissingLine)?
+        .ok_or(MyError::MissingLine)
+        .unwrap()
         .strip_prefix("seeds: ")
-        .ok_or(MyError::NotSeeds)?
+        .ok_or(MyError::NotSeeds)
+        .unwrap()
         .trim()
         .split(' ')
         .map(|x| x.parse())
-        .collect::<Result<Vec<usize>, ParseIntError>>()?;
+        .collect::<Result<Vec<usize>, ParseIntError>>()
+        .unwrap();
 
     let rest: Vec<_> = lines.collect();
-    let almanac: Almanac = rest.join("\n").parse()?;
+    let almanac: Almanac = rest.join("\n").parse().unwrap();
+
+    let min_location = seeds.into_iter().map(|seed| almanac.map(seed)).min();
+
+    min_location.unwrap() as isize
+}
+
+fn part2(input: &str) -> isize {
+    let mut lines = input.lines();
+
+    let seeds = lines
+        .next()
+        .ok_or(MyError::MissingLine)
+        .unwrap()
+        .strip_prefix("seeds: ")
+        .ok_or(MyError::NotSeeds)
+        .unwrap()
+        .trim()
+        .split(' ')
+        .map(|x| x.parse())
+        .collect::<Result<Vec<usize>, ParseIntError>>()
+        .unwrap();
+
+    let rest: Vec<_> = lines.collect();
+    let almanac: Almanac = rest.join("\n").parse().unwrap();
 
     let min_location = seeds
         .chunks_exact(2)
         .map(|s| s[0]..s[0] + s[1])
         .flat_map(|seed| almanac.map_ranges(vec![seed]).into_iter().map(|r| r.start))
         .min();
-    println!("{min_location:?}");
 
-    Ok(())
+    min_location.unwrap() as isize
 }
 
 #[derive(Debug)]

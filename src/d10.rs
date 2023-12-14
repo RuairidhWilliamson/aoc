@@ -7,13 +7,20 @@ use strum::{EnumIter, IntoEnumIterator};
 use thiserror::Error;
 
 use crate::common::grid::{add_coords, sub_coords, Coord, Grid};
+use crate::PartFn;
 
-pub fn run(s: &str) {
-    let grid: Grid<Pipe> = s.parse().unwrap();
+pub const PARTS: (PartFn, PartFn) = (part1, part2);
+
+fn part1(input: &str) -> isize {
+    let grid: Grid<Pipe> = input.parse().unwrap();
     let d = find_furthest_pipe_length(&grid);
-    println!("Length = {d}");
+    d as isize
+}
+
+fn part2(input: &str) -> isize {
+    let grid: Grid<Pipe> = input.parse().unwrap();
     let e = find_enclosed_area(grid);
-    println!("Enclosed = {e}");
+    e as isize
 }
 
 fn find_start(grid: &Grid<Pipe>) -> Option<Coord> {

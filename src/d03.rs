@@ -1,10 +1,15 @@
 use std::str::FromStr;
 
-pub fn run(input: &str) {
-    let total = find_total(input);
-    println!("Total = {total}");
-    let total_ratios = find_total_gear_ratios(input);
-    println!("Total Gear Ratios = {total_ratios}");
+use crate::PartFn;
+
+pub const PARTS: (PartFn, PartFn) = (part1, part2);
+
+fn part1(input: &str) -> isize {
+    find_total(input) as isize
+}
+
+fn part2(input: &str) -> isize {
+    find_total_gear_ratios(input) as isize
 }
 
 fn find_parts(grid: &Grid<char>) -> Vec<Part> {

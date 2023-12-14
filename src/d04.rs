@@ -1,14 +1,15 @@
 use std::{num::ParseIntError, str::FromStr};
 
-pub fn run(input: &str) {
-    run_inner(input).unwrap();
-}
+use crate::PartFn;
 
-fn run_inner(input: &str) -> Result<(), MyError> {
+pub const PARTS: (PartFn, PartFn) = (part1, part2);
+
+fn part1(input: &str) -> isize {
     let cards = input
         .lines()
         .map(|l| l.parse())
-        .collect::<Result<Vec<Card>, MyError>>()?;
+        .collect::<Result<Vec<Card>, MyError>>()
+        .expect("parse cards");
     let total: usize = cards
         .iter()
         .map(|c| {
@@ -20,8 +21,15 @@ fn run_inner(input: &str) -> Result<(), MyError> {
             }
         })
         .sum();
-    println!("Part 1 total = {total}");
+    total as isize
+}
 
+fn part2(input: &str) -> isize {
+    let cards = input
+        .lines()
+        .map(|l| l.parse())
+        .collect::<Result<Vec<Card>, MyError>>()
+        .expect("parse cards");
     let mut cards: Vec<_> = cards
         .into_iter()
         .map(|c| CardAcc {
@@ -40,9 +48,7 @@ fn run_inner(input: &str) -> Result<(), MyError> {
             .for_each(|c| c.instances += instances);
     });
     let card_count: usize = cards.iter().map(|c| c.instances).sum();
-    println!("Card count = {card_count}");
-
-    Ok(())
+    card_count as isize
 }
 
 #[derive(Debug)]

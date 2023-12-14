@@ -1,6 +1,14 @@
 use std::collections::HashMap;
 
-pub fn run(input: &str) {
+use crate::PartFn;
+
+pub const PARTS: (PartFn, PartFn) = (part1, part2);
+
+fn part1(_input: &str) -> isize {
+    0
+}
+
+fn part2(input: &str) -> isize {
     let mut lines = input.lines();
     let directions = lines.next().unwrap();
     let _ = lines.next().unwrap();
@@ -25,7 +33,7 @@ pub fn run(input: &str) {
         .collect();
     // let count = run_dumb(&directions, &network);
     let count = run_cycle_method(directions.chars(), &network);
-    println!("Answer is {count} or {count:E}");
+    count as isize
 }
 
 #[allow(dead_code)]

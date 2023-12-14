@@ -1,4 +1,8 @@
-pub fn run(input: &str) {
+use crate::PartFn;
+
+pub const PARTS: (PartFn, PartFn) = (part1, part2);
+
+fn part1(input: &str) -> isize {
     let mut lines = input.lines();
     let line = lines.next().unwrap();
     let times = line
@@ -24,10 +28,11 @@ pub fn run(input: &str) {
     let product: usize = races
         .map(|(time, distance)| ways_to_beat_race(time, distance))
         .product();
-    println!("{product}");
+    product as isize
+}
 
-    println!("Example = {}", ways_to_beat_race(71530, 940200));
-    println!("Part 2 = {}", ways_to_beat_race(62649190, 553101014731074));
+fn part2(_input: &str) -> isize {
+    ways_to_beat_race(62649190, 553101014731074) as isize
 }
 
 fn ways_to_beat_race(time: isize, distance: isize) -> usize {

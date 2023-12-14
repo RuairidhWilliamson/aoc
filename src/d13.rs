@@ -1,16 +1,22 @@
 use std::str::FromStr;
 
 use crate::common::grid::{Grid, GridParseError};
+use crate::PartFn;
 
-pub fn run(input: &str) {
-    let total = run_inner(input);
-    println!("Total = {total}");
+pub const PARTS: (PartFn, PartFn) = (part1, part2);
+
+fn part1(input: &str) -> isize {
+    run_inner(input, 0)
 }
 
-fn run_inner(input: &str) -> isize {
+fn part2(input: &str) -> isize {
+    run_inner(input, 1)
+}
+
+fn run_inner(input: &str, smudges: usize) -> isize {
     input
         .split("\n\n")
-        .map(|pat| pat.parse::<Pattern>().unwrap().find_mirror())
+        .map(|pat| pat.parse::<Pattern>().unwrap().find_mirror(smudges))
         .sum()
 }
 
@@ -18,18 +24,16 @@ struct Pattern {
     grid: Grid<Cell>,
 }
 
-const SMUDGES: usize = 1;
-
 impl Pattern {
-    fn find_mirror(&self) -> isize {
+    fn find_mirror(&self, smudges: usize) -> isize {
         for i in 1..self.grid.width() {
-            if self.is_vertical_mirror(i) {
+            if self.is_vertical_mirror(i, smudges) {
                 // println!("vertical {i}");
                 return i;
             }
         }
         for i in 1..self.grid.height() {
-            if self.is_horizontal_mirror(i) {
+            if self.is_horizontal_mirror(i, smudges) {
                 // println!("horizontal {i}");
                 return i * 100;
             }
@@ -37,7 +41,7 @@ impl Pattern {
         panic!("no mirror found")
     }
 
-    fn is_vertical_mirror(&self, index: isize) -> bool {
+    fn is_vertical_mirror(&self, index: isize, smudges: usize) -> bool {
         let mut error_count = 0;
         for (x, y) in self.grid.enumerate_coords() {
             let other_x = 2 * index - 1 - x;
@@ -47,15 +51,15 @@ impl Pattern {
             let a = self.grid.get((x, y)).unwrap();
             if a != b {
                 error_count += 1;
-                if error_count > SMUDGES * 2 {
+                if error_count > smudges * 2 {
                     return false;
                 }
             }
         }
-        error_count == SMUDGES * 2
+        error_count == smudges * 2
     }
 
-    fn is_horizontal_mirror(&self, index: isize) -> bool {
+    fn is_horizontal_mirror(&self, index: isize, smudges: usize) -> bool {
         let mut error_count = 0;
         for (x, y) in self.grid.enumerate_coords() {
             let other_y = 2 * index - 1 - y;
@@ -65,12 +69,12 @@ impl Pattern {
             let a = self.grid.get((x, y)).unwrap();
             if a != b {
                 error_count += 1;
-                if error_count > SMUDGES * 2 {
+                if error_count > smudges * 2 {
                     return false;
                 }
             }
         }
-        error_count == SMUDGES * 2
+        error_count == smudges * 2
     }
 }
 
@@ -120,7 +124,7 @@ fn example() {
     .trim()
     .trim_matches('\n');
     let pat: Pattern = input.parse().unwrap();
-    assert_eq!(pat.find_mirror(), 300);
+    assert_eq!(pat.find_mirror(1), 300);
 }
 
 #[test]
@@ -137,5 +141,5 @@ fn example2() {
     .trim()
     .trim_matches('\n');
     let pat: Pattern = input.parse().unwrap();
-    assert_eq!(pat.find_mirror(), 100);
+    assert_eq!(pat.find_mirror(1), 100);
 }

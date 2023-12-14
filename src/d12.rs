@@ -1,8 +1,17 @@
 use std::num::NonZeroUsize;
 
-pub fn run(input: &str) {
+use crate::PartFn;
+
+pub const PARTS: (PartFn, PartFn) = (part1, part2);
+
+fn part1(input: &str) -> isize {
+    let total = sum_lines(input, 1);
+    total as isize
+}
+
+fn part2(input: &str) -> isize {
     let total = sum_lines(input, 5);
-    println!("Total = {total}");
+    total as isize
 }
 
 fn sum_lines(input: &str, repeat: usize) -> usize {

@@ -1,6 +1,14 @@
 use std::str::FromStr;
 
-pub fn run(input: &str) {
+use crate::PartFn;
+
+pub const PARTS: (PartFn, PartFn) = (part1, part2);
+
+fn part1(_input: &str) -> isize {
+    0
+}
+
+fn part2(input: &str) -> isize {
     let mut hands: Vec<_> = input
         .lines()
         .map(|line| {
@@ -15,7 +23,7 @@ pub fn run(input: &str) {
     //     .iter()
     //     .for_each(|h| println!("{} {:?}", h.hand, h.hand.hand_type()));
     let total: usize = hands.iter().enumerate().map(|(i, h)| (i + 1) * h.bid).sum();
-    println!("Total {total}");
+    total as isize
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
