@@ -82,6 +82,18 @@ impl<T> Grid<T> {
     }
 }
 
+impl<T> Grid<T>
+where
+    T: Clone,
+{
+    pub fn new(element: T, width: usize, height: usize) -> Self {
+        Self {
+            elements: vec![element; width * height],
+            width: width as isize,
+        }
+    }
+}
+
 impl<T> std::fmt::Debug for Grid<T>
 where
     T: std::fmt::Debug,
