@@ -20,6 +20,7 @@ mod d13;
 mod d14;
 mod d15;
 mod d16;
+mod d17;
 
 #[derive(Debug, Parser)]
 struct Cli {
@@ -55,6 +56,7 @@ const DAYS: &[(PartFn, PartFn)] = &[
     d14::PARTS,
     d15::PARTS,
     d16::PARTS,
+    d17::PARTS,
 ];
 
 fn main() {

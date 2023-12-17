@@ -335,6 +335,10 @@ fn find_common(period1: isize, period2: isize, phase1: isize, phase2: isize) -> 
     (out + lcm) % lcm
 }
 
+fn find_common_n(period_phases: &[(isize, isize)]) -> isize {
+    todo!();
+}
+
 #[test]
 fn test_extended_euclidean() {
     let a = 240;
@@ -349,6 +353,6 @@ fn test_extended_euclidean() {
 fn test_common_period_phase() {
     let answer = find_common(3, 2, 2, 0);
     println!("{answer}");
-    panic!()
+    assert_eq!(find_common_n(&[(3, 2), (2, 0)]), answer);
 }
 */
