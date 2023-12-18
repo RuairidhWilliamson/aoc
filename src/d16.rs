@@ -79,7 +79,7 @@ fn trace_laser(grid: &Grid<Cell>, start: LaserState) -> Grid<Energized> {
 
         states = states
             .into_iter()
-            .flat_map(|s| s.update_direction(&grid, &mut visited_splitters))
+            .flat_map(|s| s.update_direction(grid, &mut visited_splitters))
             .map(|mut s| {
                 s.update_position();
                 s
