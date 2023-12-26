@@ -9,7 +9,7 @@ fn part1(input: &str) -> usize {
 }
 
 fn part2(input: &str) -> usize {
-    find_total_gear_ratios(input) as usize
+    find_total_gear_ratios(input)
 }
 
 fn find_parts(grid: &Grid<char>) -> Vec<Part> {

@@ -1,7 +1,5 @@
 use std::collections::{HashMap, HashSet};
 
-use kdam::{tqdm, BarExt};
-
 use crate::PartFn;
 
 pub const PARTS: (PartFn, PartFn) = (part1, part2);
@@ -12,7 +10,7 @@ fn part1(input: &str) -> usize {
     c1 * c2
 }
 
-fn part2(input: &str) -> usize {
+fn part2(_input: &str) -> usize {
     0
 }
 
@@ -46,6 +44,7 @@ fn get_vertex_index_or_insert(verts: &mut Vec<(String, usize)>, x: &str) -> usiz
 }
 
 impl Graph {
+    #[allow(unused)]
     fn get_vertex_id(&self, v: &str) -> Option<usize> {
         self.vertices
             .iter()
@@ -156,9 +155,9 @@ impl Graph {
             }
         }
         let not_visited: Vec<_> = (0..self.vertices.len())
-            .filter(|i| !visited.contains(&i))
+            .filter(|i| !visited.contains(i))
             .collect();
-        let i = not_visited.iter().next()?;
+        let i = not_visited.first()?;
         let other_connected_count = self.find_connected_vert_count_without(*i, without);
         if other_connected_count + 1 == not_visited.len() {
             Some([visited.len(), other_connected_count + 1])

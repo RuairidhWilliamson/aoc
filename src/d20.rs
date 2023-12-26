@@ -19,10 +19,10 @@ fn part2(input: &str) -> usize {
     config.prepass();
     let rx_inputs = config.get_inputs("rx");
     assert_eq!(rx_inputs.len(), 1);
-    let bc = config.branch_cycle(&rx_inputs[0], &Pulse::Low).period;
-    bc
+    config.branch_cycle(&rx_inputs[0], &Pulse::Low).period
 }
 
+/*
 fn analyze_cycles(config: Configuration) {
     let mut module_cycles = HashMap::<String, ModuleCycle>::default();
     for (label, m) in config.modules {
@@ -95,6 +95,7 @@ struct ModuleCycle {
     inputs: Vec<String>,
     cycle: Option<usize>,
 }
+*/
 
 #[derive(Debug, Clone)]
 pub struct Configuration {
@@ -165,6 +166,7 @@ impl Configuration {
         }
     }
 
+    #[allow(unused)]
     fn push_button_until(&mut self, name: &str, pulse: &Pulse) -> usize {
         for i in 1..usize::MAX {
             if self.push_button_check_dst(name, pulse) {
@@ -226,12 +228,7 @@ impl Configuration {
         let mut pulses = vec![Self::start_button()];
         let mut found = false;
         while !pulses.is_empty() {
-            if !found
-                && pulses
-                    .iter()
-                    .find(|p| &p.pulse == pulse && p.dst == name)
-                    .is_some()
-            {
+            if !found && pulses.iter().any(|p| &p.pulse == pulse && p.dst == name) {
                 found = true;
             }
             pulses = self.send_pulses(pulses);
@@ -243,12 +240,7 @@ impl Configuration {
         let mut pulses = vec![Self::start_button()];
         let mut found = false;
         while !pulses.is_empty() {
-            if !found
-                && pulses
-                    .iter()
-                    .find(|p| &p.pulse == pulse && p.src == name)
-                    .is_some()
-            {
+            if !found && pulses.iter().any(|p| &p.pulse == pulse && p.src == name) {
                 found = true;
             }
             pulses = self.send_pulses(pulses);
@@ -417,7 +409,7 @@ enum ModuleKind {
 impl ModuleKind {
     fn create_implementation(&self) -> ModuleImplementation {
         match self {
-            ModuleKind::Broadcaster => ModuleImplementation::Broadcaster(Broadcaster::default()),
+            ModuleKind::Broadcaster => ModuleImplementation::Broadcaster(Broadcaster),
             ModuleKind::FlipFlop => ModuleImplementation::FlipFlop(FlipFlop::default()),
             ModuleKind::Conjunction => ModuleImplementation::Conjunction(Conjunction::default()),
         }

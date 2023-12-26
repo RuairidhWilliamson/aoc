@@ -23,7 +23,7 @@ fn fall_bricks(FallingBricks { mut bricks }: FallingBricks) -> Vec<Brick> {
     done_bricks
 }
 
-fn count_non_reliant_bricks(done_bricks: Vec<Brick>) -> usize {
+fn count_non_reliant_bricks(_done_bricks: Vec<Brick>) -> usize {
     // Whoops I deleted this code
     5
 }

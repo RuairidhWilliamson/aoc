@@ -13,14 +13,12 @@ pub const PARTS: (PartFn, PartFn) = (part1, part2);
 
 fn part1(input: &str) -> usize {
     let grid: Grid<Pipe> = input.parse().unwrap();
-    let d = find_furthest_pipe_length(&grid);
-    d
+    find_furthest_pipe_length(&grid)
 }
 
 fn part2(input: &str) -> usize {
     let grid: Grid<Pipe> = input.parse().unwrap();
-    let e = find_enclosed_area(grid);
-    e
+    find_enclosed_area(grid)
 }
 
 fn find_start(grid: &Grid<Pipe>) -> Option<Coord> {

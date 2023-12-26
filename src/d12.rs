@@ -5,13 +5,11 @@ use crate::PartFn;
 pub const PARTS: (PartFn, PartFn) = (part1, part2);
 
 fn part1(input: &str) -> usize {
-    let total = sum_lines(input, 1);
-    total
+    sum_lines(input, 1)
 }
 
 fn part2(input: &str) -> usize {
-    let total = sum_lines(input, 5);
-    total
+    sum_lines(input, 5)
 }
 
 fn sum_lines(input: &str, repeat: usize) -> usize {

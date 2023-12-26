@@ -35,8 +35,7 @@ fn count_intersects_xy(hailstones: &[Hailstone], xy_area: RangeInclusive<f64>) -
     let mut count = 0;
     for i in 0..hailstones.len() {
         let a = &hailstones[i];
-        for j in 0..i {
-            let b = &hailstones[j];
+        for b in &hailstones[..i] {
             let Some(intersect) = a.intersect_xy(b) else {
                 continue;
             };
@@ -52,7 +51,7 @@ fn count_intersects_xy(hailstones: &[Hailstone], xy_area: RangeInclusive<f64>) -
 fn solve_intersect_all(hailstones: &[Hailstone]) -> Hailstone {
     let n = hailstones.len();
     let mut inputs = Array::from_elem(6 + n, 0.0);
-    for it in 0..100 {
+    for _it in 0..100 {
         let f = Array::from_shape_fn(3 * n, |i| {
             let j = i % 3;
             let k = i / 3;
@@ -77,12 +76,10 @@ fn solve_intersect_all(hailstones: &[Hailstone]) -> Hailstone {
                 } else {
                     0.0
                 }
+            } else if i - 6 == j / 3 {
+                hailstones[j / 3].velocity.as_f64_arr()[j % 3]
             } else {
-                if i - 6 == j / 3 {
-                    hailstones[j / 3].velocity.as_f64_arr()[j % 3]
-                } else {
-                    0.0
-                }
+                0.0
             }
         });
         let jacobian = jacobian.t();
@@ -103,7 +100,7 @@ fn solve_intersect_all(hailstones: &[Hailstone]) -> Hailstone {
         &inputs[0],
         &inputs[1],
         &inputs[2],
-        &inputs[0] + &inputs[1] + &inputs[2]
+        inputs[0] + inputs[1] + inputs[2]
     );
     Hailstone {
         position: Vector {

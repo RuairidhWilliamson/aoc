@@ -28,10 +28,6 @@ name = "d12"
 harness = false
 
 [[bench]]
-name = "d20"
-harness = false
-
-[[bench]]
 name = "d21"
 harness = false
 

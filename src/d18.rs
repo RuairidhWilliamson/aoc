@@ -75,16 +75,16 @@ fn get_edges(instructions: &[DigInstruction]) -> Vec<Edge> {
 fn get_vertical_edges(edges: &[Edge]) -> Vec<Edge> {
     edges
         .iter()
+        .filter(|&e| e.to.0 == e.from.0)
         .cloned()
-        .filter(|e| e.to.0 == e.from.0)
         .collect()
 }
 
 fn get_horizontal_edges(edges: &[Edge]) -> Vec<Edge> {
     edges
         .iter()
-        .cloned()
         .filter(|e| e.to.1 == e.from.1)
+        .cloned()
         .collect()
 }
 
