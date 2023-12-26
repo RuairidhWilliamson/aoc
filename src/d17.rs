@@ -7,14 +7,14 @@ use crate::{
 
 pub const PARTS: (PartFn, PartFn) = (part1, part2);
 
-fn part1(input: &str) -> isize {
+fn part1(input: &str) -> usize {
     let city: Grid<CellHeatLoss> = input.trim().trim_matches('\n').parse().unwrap();
-    find_route::<NormalCrucibleState>(&city) as isize
+    find_route::<NormalCrucibleState>(&city)
 }
 
-fn part2(input: &str) -> isize {
+fn part2(input: &str) -> usize {
     let city: Grid<CellHeatLoss> = input.trim().trim_matches('\n').parse().unwrap();
-    find_route::<UltraCrucibleState>(&city) as isize
+    find_route::<UltraCrucibleState>(&city)
 }
 
 fn find_route<T>(city: &Grid<CellHeatLoss>) -> usize

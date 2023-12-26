@@ -4,12 +4,12 @@ use crate::PartFn;
 
 pub const PARTS: (PartFn, PartFn) = (part1, part2);
 
-fn part1(input: &str) -> isize {
+fn part1(input: &str) -> usize {
     let instructions = get_instructions(input, false, false);
     area(instructions)
 }
 
-fn part2(input: &str) -> isize {
+fn part2(input: &str) -> usize {
     let instructions = get_instructions(input, true, false);
     let transpose_area = area(instructions);
     let instructions = get_instructions(input, true, false);
@@ -88,7 +88,7 @@ fn get_horizontal_edges(edges: &[Edge]) -> Vec<Edge> {
         .collect()
 }
 
-fn area(instructions: Vec<DigInstruction>) -> isize {
+fn area(instructions: Vec<DigInstruction>) -> usize {
     let edges = get_edges(&instructions);
     let vertical_edges = get_vertical_edges(&edges);
     let horizontal_edges = get_horizontal_edges(&edges);
@@ -118,7 +118,7 @@ fn area(instructions: Vec<DigInstruction>) -> isize {
     let interior_area: isize = (min_y..=max_y)
         .map(|y| scan_row(y, &vertical_edges, &horizontal_edges))
         .sum();
-    perimeter + interior_area
+    (perimeter + interior_area) as usize
 }
 
 fn scan_row(y: isize, vertical_edges: &[Edge], horizontal_edges: &[Edge]) -> isize {

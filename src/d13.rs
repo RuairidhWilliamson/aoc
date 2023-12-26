@@ -5,15 +5,15 @@ use crate::PartFn;
 
 pub const PARTS: (PartFn, PartFn) = (part1, part2);
 
-fn part1(input: &str) -> isize {
+fn part1(input: &str) -> usize {
     run_inner(input, 0)
 }
 
-fn part2(input: &str) -> isize {
+fn part2(input: &str) -> usize {
     run_inner(input, 1)
 }
 
-fn run_inner(input: &str, smudges: usize) -> isize {
+fn run_inner(input: &str, smudges: usize) -> usize {
     input
         .split("\n\n")
         .map(|pat| pat.parse::<Pattern>().unwrap().find_mirror(smudges))
@@ -25,17 +25,17 @@ struct Pattern {
 }
 
 impl Pattern {
-    fn find_mirror(&self, smudges: usize) -> isize {
+    fn find_mirror(&self, smudges: usize) -> usize {
         for i in 1..self.grid.width() {
             if self.is_vertical_mirror(i, smudges) {
                 // println!("vertical {i}");
-                return i;
+                return i as usize;
             }
         }
         for i in 1..self.grid.height() {
             if self.is_horizontal_mirror(i, smudges) {
                 // println!("horizontal {i}");
-                return i * 100;
+                return i as usize * 100;
             }
         }
         panic!("no mirror found")

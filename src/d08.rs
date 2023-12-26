@@ -4,11 +4,11 @@ use crate::PartFn;
 
 pub const PARTS: (PartFn, PartFn) = (part1, part2);
 
-fn part1(_input: &str) -> isize {
+fn part1(_input: &str) -> usize {
     0
 }
 
-fn part2(input: &str) -> isize {
+fn part2(input: &str) -> usize {
     let mut lines = input.lines();
     let directions = lines.next().unwrap();
     let _ = lines.next().unwrap();
@@ -33,7 +33,7 @@ fn part2(input: &str) -> isize {
         .collect();
     // let count = run_dumb(&directions, &network);
     let count = run_cycle_method(directions.chars(), &network);
-    count as isize
+    count
 }
 
 #[allow(dead_code)]

@@ -11,6 +11,10 @@ strum = { version = "0.25", features = ["derive"] }
 thiserror = "1"
 lru = "0.12"
 kdam = "0.5.1"
+memoize = "0.4.1"
+rayon = "1.8.0"
+ndarray = "0.15.6"
+ndarray-linalg = { version = "0.16", features = ["openblas-system"] }
 
 [dev-dependencies]
 criterion = { version = "0.3", features = ["html_reports"] }
@@ -21,4 +25,16 @@ harness = false
 
 [[bench]]
 name = "d12"
+harness = false
+
+[[bench]]
+name = "d20"
+harness = false
+
+[[bench]]
+name = "d21"
+harness = false
+
+[[bench]]
+name = "d25"
 harness = false

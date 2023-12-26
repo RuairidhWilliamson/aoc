@@ -23,6 +23,12 @@ mod d16;
 mod d17;
 mod d18;
 mod d19;
+mod d20;
+mod d21;
+mod d22;
+mod d23;
+mod d24;
+mod d25;
 
 #[derive(Debug, Parser)]
 struct Cli {
@@ -39,7 +45,7 @@ enum Part {
     Two,
 }
 
-type PartFn = fn(&str) -> isize;
+type PartFn = fn(&str) -> usize;
 
 const DAYS: &[(PartFn, PartFn)] = &[
     d01::PARTS,
@@ -61,6 +67,12 @@ const DAYS: &[(PartFn, PartFn)] = &[
     d17::PARTS,
     d18::PARTS,
     d19::PARTS,
+    d20::PARTS,
+    d21::PARTS,
+    d22::PARTS,
+    d23::PARTS,
+    d24::PARTS,
+    d25::PARTS,
 ];
 
 fn main() {

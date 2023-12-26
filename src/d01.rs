@@ -8,7 +8,7 @@ const NUMBERS: &[&str] = &[
 
 pub const PARTS: (PartFn, PartFn) = (part1, part2);
 
-fn part1(input: &str) -> isize {
+fn part1(input: &str) -> usize {
     input
         .lines()
         .map(|line| {
@@ -18,10 +18,10 @@ fn part1(input: &str) -> isize {
             let b = convert_number(line, b_index);
             a * 10 + b
         })
-        .sum::<usize>() as isize
+        .sum::<usize>()
 }
 
-fn part2(input: &str) -> isize {
+fn part2(input: &str) -> usize {
     input
         .lines()
         .map(|line| {
@@ -31,7 +31,7 @@ fn part2(input: &str) -> isize {
             let b = convert_number(line, b_index);
             a * 10 + b
         })
-        .sum::<usize>() as isize
+        .sum::<usize>()
 }
 
 fn match_index_forward(line: &str, include_text: bool) -> usize {

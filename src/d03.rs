@@ -4,12 +4,12 @@ use crate::PartFn;
 
 pub const PARTS: (PartFn, PartFn) = (part1, part2);
 
-fn part1(input: &str) -> isize {
-    find_total(input) as isize
+fn part1(input: &str) -> usize {
+    find_total(input)
 }
 
-fn part2(input: &str) -> isize {
-    find_total_gear_ratios(input) as isize
+fn part2(input: &str) -> usize {
+    find_total_gear_ratios(input) as usize
 }
 
 fn find_parts(grid: &Grid<char>) -> Vec<Part> {
@@ -25,7 +25,7 @@ fn find_parts(grid: &Grid<char>) -> Vec<Part> {
                     end: x,
                     y,
                 });
-                part.acc = part.acc * 10 + *c as u64 - '0' as u64;
+                part.acc = part.acc * 10 + *c as usize - '0' as usize;
                 part.end = x;
                 num_acc = Some(part);
             } else if *c == '.' || c.is_ascii_punctuation() {
@@ -55,13 +55,13 @@ fn find_parts(grid: &Grid<char>) -> Vec<Part> {
     acc
 }
 
-fn find_total(input: &str) -> u64 {
+fn find_total(input: &str) -> usize {
     let grid: Grid<char> = input.parse().unwrap();
     let parts = find_parts(&grid);
     parts.iter().map(|p| p.number).sum()
 }
 
-fn find_total_gear_ratios(input: &str) -> u64 {
+fn find_total_gear_ratios(input: &str) -> usize {
     let grid: Grid<char> = input.parse().unwrap();
     let parts: Vec<Part> = find_parts(&grid)
         .into_iter()
@@ -84,7 +84,7 @@ fn find_total_gear_ratios(input: &str) -> u64 {
 }
 
 struct PartNumberAcc {
-    acc: u64,
+    acc: usize,
     start: isize,
     end: isize,
     y: isize,
@@ -112,7 +112,7 @@ fn iter_product<T: Copy, U, I: Iterator<Item = U> + Clone>(
 }
 
 struct Part {
-    number: u64,
+    number: usize,
     coord: (isize, isize),
     symbol: char,
 }

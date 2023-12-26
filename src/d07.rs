@@ -4,11 +4,11 @@ use crate::PartFn;
 
 pub const PARTS: (PartFn, PartFn) = (part1, part2);
 
-fn part1(_input: &str) -> isize {
+fn part1(_input: &str) -> usize {
     0
 }
 
-fn part2(input: &str) -> isize {
+fn part2(input: &str) -> usize {
     let mut hands: Vec<_> = input
         .lines()
         .map(|line| {
@@ -23,7 +23,7 @@ fn part2(input: &str) -> isize {
     //     .iter()
     //     .for_each(|h| println!("{} {:?}", h.hand, h.hand.hand_type()));
     let total: usize = hands.iter().enumerate().map(|(i, h)| (i + 1) * h.bid).sum();
-    total as isize
+    total
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]

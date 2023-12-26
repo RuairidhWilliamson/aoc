@@ -11,16 +11,16 @@ use crate::PartFn;
 
 pub const PARTS: (PartFn, PartFn) = (part1, part2);
 
-fn part1(input: &str) -> isize {
+fn part1(input: &str) -> usize {
     let grid: Grid<Pipe> = input.parse().unwrap();
     let d = find_furthest_pipe_length(&grid);
-    d as isize
+    d
 }
 
-fn part2(input: &str) -> isize {
+fn part2(input: &str) -> usize {
     let grid: Grid<Pipe> = input.parse().unwrap();
     let e = find_enclosed_area(grid);
-    e as isize
+    e
 }
 
 fn find_start(grid: &Grid<Pipe>) -> Option<Coord> {

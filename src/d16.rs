@@ -5,7 +5,7 @@ use crate::{
 
 pub const PARTS: (PartFn, PartFn) = (part1, part2);
 
-fn part1(input: &str) -> isize {
+fn part1(input: &str) -> usize {
     let grid = parse_grid(input);
     let energized = trace_laser(
         &grid,
@@ -17,7 +17,7 @@ fn part1(input: &str) -> isize {
     count_energized(&energized)
 }
 
-fn part2(input: &str) -> isize {
+fn part2(input: &str) -> usize {
     let grid = parse_grid(input);
 
     (0..grid.width())
@@ -89,11 +89,11 @@ fn trace_laser(grid: &Grid<Cell>, start: LaserState) -> Grid<Energized> {
     energized
 }
 
-fn count_energized(energized: &Grid<Energized>) -> isize {
+fn count_energized(energized: &Grid<Energized>) -> usize {
     energized
         .enumerate_coords()
         .filter(|c| energized.get(*c).unwrap() == &Energized::Energized)
-        .count() as isize
+        .count()
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

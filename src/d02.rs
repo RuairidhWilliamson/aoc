@@ -8,7 +8,7 @@ use crate::PartFn;
 
 pub const PARTS: (PartFn, PartFn) = (part1, part2);
 
-fn part1(input: &str) -> isize {
+fn part1(input: &str) -> usize {
     let games: Vec<Game> = input
         .lines()
         .map(|line| line.parse::<Game>())
@@ -31,10 +31,10 @@ fn part1(input: &str) -> isize {
         })
         .map(|game| game.id)
         .sum();
-    total as isize
+    total
 }
 
-fn part2(input: &str) -> isize {
+fn part2(input: &str) -> usize {
     let games: Vec<Game> = input
         .lines()
         .map(|line| line.parse::<Game>())
@@ -53,7 +53,7 @@ fn part2(input: &str) -> isize {
             max_counts.iter().map(|(_, &c)| c).product::<usize>()
         })
         .sum();
-    power_set_total as isize
+    power_set_total
 }
 
 #[derive(Debug)]

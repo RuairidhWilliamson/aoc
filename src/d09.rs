@@ -2,22 +2,22 @@ use crate::PartFn;
 
 pub const PARTS: (PartFn, PartFn) = (part1, part2);
 
-fn part1(input: &str) -> isize {
+fn part1(input: &str) -> usize {
     input
         .lines()
         .map(|line| {
             let sequence = parse_sequence(line);
-            next_element(&sequence)
+            next_element(&sequence) as usize
         })
         .sum()
 }
 
-fn part2(input: &str) -> isize {
+fn part2(input: &str) -> usize {
     input
         .lines()
         .map(|line| {
             let sequence = parse_sequence(line);
-            prev_element(&sequence)
+            prev_element(&sequence) as usize
         })
         .sum()
 }

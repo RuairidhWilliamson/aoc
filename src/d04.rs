@@ -4,7 +4,7 @@ use crate::PartFn;
 
 pub const PARTS: (PartFn, PartFn) = (part1, part2);
 
-fn part1(input: &str) -> isize {
+fn part1(input: &str) -> usize {
     let cards = input
         .lines()
         .map(|l| l.parse())
@@ -21,10 +21,10 @@ fn part1(input: &str) -> isize {
             }
         })
         .sum();
-    total as isize
+    total
 }
 
-fn part2(input: &str) -> isize {
+fn part2(input: &str) -> usize {
     let cards = input
         .lines()
         .map(|l| l.parse())
@@ -48,7 +48,7 @@ fn part2(input: &str) -> isize {
             .for_each(|c| c.instances += instances);
     });
     let card_count: usize = cards.iter().map(|c| c.instances).sum();
-    card_count as isize
+    card_count
 }
 
 #[derive(Debug)]

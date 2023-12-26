@@ -4,7 +4,7 @@ use crate::PartFn;
 
 pub const PARTS: (PartFn, PartFn) = (part1, part2);
 
-fn part1(input: &str) -> isize {
+fn part1(input: &str) -> usize {
     let mut lines = input.lines();
 
     let seeds = lines
@@ -25,10 +25,10 @@ fn part1(input: &str) -> isize {
 
     let min_location = seeds.into_iter().map(|seed| almanac.map(seed)).min();
 
-    min_location.unwrap() as isize
+    min_location.unwrap()
 }
 
-fn part2(input: &str) -> isize {
+fn part2(input: &str) -> usize {
     let mut lines = input.lines();
 
     let seeds = lines
@@ -53,7 +53,7 @@ fn part2(input: &str) -> isize {
         .flat_map(|seed| almanac.map_ranges(vec![seed]).into_iter().map(|r| r.start))
         .min();
 
-    min_location.unwrap() as isize
+    min_location.unwrap()
 }
 
 #[derive(Debug)]

@@ -4,16 +4,16 @@ use crate::PartFn;
 
 pub const PARTS: (PartFn, PartFn) = (part1, part2);
 
-fn part1(input: &str) -> isize {
+fn part1(input: &str) -> usize {
     input
         .trim()
         .trim_matches('\n')
         .split(',')
-        .map(|s| hash(s) as isize)
+        .map(|s| hash(s) as usize)
         .sum()
 }
 
-fn part2(input: &str) -> isize {
+fn part2(input: &str) -> usize {
     let mut entries = Entries::default();
     input.trim().trim_matches('\n').split(',').for_each(|s| {
         let symbol_index = s.find(['=', '-']).unwrap();
@@ -49,7 +49,7 @@ fn part2(input: &str) -> isize {
                 .map(|(j, e)| (*i as usize + 1) * (j + 1) * e.value)
                 .sum::<usize>()
         })
-        .sum::<usize>() as isize
+        .sum::<usize>()
 }
 
 fn hash(input: &str) -> u8 {

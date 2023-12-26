@@ -4,12 +4,14 @@ use super::PartFn;
 
 pub const PARTS: (PartFn, PartFn) = (part1, part2);
 
-fn part1(input: &str) -> isize {
+fn part1(input: &str) -> usize {
     let input = input.parse().unwrap();
-    accepted_parts(&input).map(|part| part.sum_ratings()).sum()
+    accepted_parts(&input)
+        .map(|part| part.sum_ratings())
+        .sum::<isize>() as usize
 }
 
-fn part2(input: &str) -> isize {
+fn part2(input: &str) -> usize {
     let input: Input = input.parse().unwrap();
 
     let port_range = PartRange {
@@ -18,7 +20,7 @@ fn part2(input: &str) -> isize {
         a: 1..4001,
         s: 1..4001,
     };
-    port_range.run_workflow(&Destination::Workflow(String::from("in")), &input.workflows)
+    port_range.run_workflow(&Destination::Workflow(String::from("in")), &input.workflows) as usize
 }
 
 fn accepted_parts(input: &Input) -> impl Iterator<Item = &Part> {

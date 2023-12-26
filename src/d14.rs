@@ -3,17 +3,17 @@ use crate::PartFn;
 
 pub const PARTS: (PartFn, PartFn) = (part1, part2);
 
-fn part1(input: &str) -> isize {
+fn part1(input: &str) -> usize {
     let mut grid: Grid<Cell> = input.parse().unwrap();
     slide_grid_north(&mut grid);
     north_beam_load(&grid)
 }
 
-fn part2(input: &str) -> isize {
+fn part2(input: &str) -> usize {
     run_inner(input, 1000000000)
 }
 
-fn run_inner(input: &str, cycles: usize) -> isize {
+fn run_inner(input: &str, cycles: usize) -> usize {
     let mut grid: Grid<Cell> = input.parse().unwrap();
     slide_grid(&mut grid, cycles);
 
@@ -22,16 +22,16 @@ fn run_inner(input: &str, cycles: usize) -> isize {
     north_beam_load(&grid)
 }
 
-fn north_beam_load(grid: &Grid<Cell>) -> isize {
+fn north_beam_load(grid: &Grid<Cell>) -> usize {
     grid.enumerate_coords()
         .map(|c| {
             let cell = grid.get(c).unwrap();
             match cell {
-                Cell::RoundRock => grid.height() - c.1,
+                Cell::RoundRock => (grid.height() - c.1) as usize,
                 _ => 0,
             }
         })
-        .sum::<isize>()
+        .sum::<usize>()
 }
 
 fn slide_grid(grid: &mut Grid<Cell>, cycles: usize) {

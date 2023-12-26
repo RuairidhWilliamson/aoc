@@ -4,14 +4,14 @@ use crate::PartFn;
 
 pub const PARTS: (PartFn, PartFn) = (part1, part2);
 
-fn part1(input: &str) -> isize {
+fn part1(input: &str) -> usize {
     let total = sum_lines(input, 1);
-    total as isize
+    total
 }
 
-fn part2(input: &str) -> isize {
+fn part2(input: &str) -> usize {
     let total = sum_lines(input, 5);
-    total as isize
+    total
 }
 
 fn sum_lines(input: &str, repeat: usize) -> usize {
