@@ -5,3 +5,13 @@ pub fn solve_part1(_input: &str) -> usize {
 pub fn solve_part2(_input: &str) -> usize {
     todo!()
 }
+
+// #[test]
+// fn practice_part1() {
+//     todo!()
+// }
+
+// #[test]
+// fn practice_part2() {
+//     todo!()
+// }

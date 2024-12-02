@@ -15,6 +15,7 @@ macro_rules! days {
 
 days! {
     day01,
+    day02,
 }
 
 fn main() -> ExitCode {
