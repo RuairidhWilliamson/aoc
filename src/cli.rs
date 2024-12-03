@@ -1,3 +1,5 @@
+#![warn(clippy::unwrap_used)]
+
 use std::{
     fs::create_dir_all,
     io::ErrorKind,
@@ -149,14 +151,14 @@ impl Selection {
         // println!("Running day {} part 1...", self.day.get());
         let (part1, _) = super::DAYS[self.day.get() - 1];
         let out = part1(input);
-        println!("Day {} part 1 answer is {out}", self.day.get());
+        println!("{:02}:1 => {out}", self.day.get());
     }
 
     fn run_part2(&self, input: &str) {
         // println!("Running day {} part 2...", self.day.get());
         let (_, part2) = super::DAYS[self.day.get() - 1];
         let out = part2(input);
-        println!("Day {} part 2 answer is {out}", self.day.get());
+        println!("{:02}:2 => {out}", self.day.get());
     }
 }
 
