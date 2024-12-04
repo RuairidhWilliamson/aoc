@@ -1,6 +1,7 @@
 use std::process::ExitCode;
 
 mod cli;
+mod grid;
 
 type SolveFn = fn(&str) -> usize;
 
@@ -17,6 +18,7 @@ days! {
     day01,
     day02,
     day03,
+    day04,
 }
 
 fn main() -> ExitCode {
