@@ -4,7 +4,7 @@ pub fn solve_part1(input: &str) -> usize {
     let grid: Grid<char> = input.parse().unwrap();
     grid.coords_iter()
         .map(|c| {
-            if grid.get(c).unwrap() == &'X' {
+            if grid.get_old(c).unwrap() == &'X' {
                 [
                     check_line(&grid, c, (1, 0)),
                     check_line(&grid, c, (-1, 0)),
@@ -33,7 +33,7 @@ fn check_line(
     for (i, c) in "XMAS".chars().enumerate() {
         let x = start_x.checked_add_signed(direction_x * i as isize)?;
         let y = start_y.checked_add_signed(direction_y * i as isize)?;
-        let cell = grid.get((x, y))?;
+        let cell = grid.get_old((x, y))?;
         if cell != &c {
             return None;
         }
@@ -45,7 +45,7 @@ pub fn solve_part2(input: &str) -> usize {
     let grid: Grid<char> = input.parse().unwrap();
     grid.coords_iter()
         .map(|c| {
-            if grid.get(c).unwrap() == &'A' {
+            if grid.get_old(c).unwrap() == &'A' {
                 [
                     check_x_mas(&grid, c, Direction::Up),
                     check_x_mas(&grid, c, Direction::Down),
@@ -86,14 +86,14 @@ fn check_x_mas(
     (start_x, start_y): (usize, usize),
     direction: Direction,
 ) -> Option<()> {
-    let center = grid.get((start_x, start_y))?;
+    let center = grid.get_old((start_x, start_y))?;
     if center != &'A' {
         return None;
     }
     for ((d_x, d_y), expected) in direction.mas() {
         let x = start_x.checked_add_signed(d_x)?;
         let y = start_y.checked_add_signed(d_y)?;
-        if grid.get((x, y))? != &expected {
+        if grid.get_old((x, y))? != &expected {
             return None;
         }
     }
