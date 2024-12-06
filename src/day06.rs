@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::grid::{Direction, Grid, Vec2};
+use aoc_helper::grid::{Direction, Grid, Vec2};
 
 pub fn solve_part1(input: &str) -> usize {
     let mut state = State::parse(input);
@@ -65,7 +65,7 @@ impl State {
             })
             .collect();
         State {
-            grid: Grid::new(data, width),
+            grid: Grid::new(data, width as isize),
             guard: Guard {
                 position: guard.unwrap(),
                 direction: Direction::North,
@@ -115,14 +115,14 @@ impl State {
 
     fn count_visited(&self) -> usize {
         self.grid
-            .iter()
+            .flat_iter()
             .filter(|c| matches!(c, Cell::Empty(v) if v.any()))
             .count()
     }
 
     fn iter_visited(&self) -> impl Iterator<Item = Vec2> + use<'_> {
         self.grid
-            .coords_iter_new()
+            .coords_iter()
             .filter(|c| matches!(self.grid.get(*c).unwrap(), Cell::Empty(v) if v.any()))
     }
 }

@@ -1,19 +1,19 @@
-use crate::grid::Grid;
+use aoc_helper::grid::{Grid, Vec2};
 
 pub fn solve_part1(input: &str) -> usize {
     let grid: Grid<char> = input.parse().unwrap();
     grid.coords_iter()
         .map(|c| {
-            if grid.get_old(c).unwrap() == &'X' {
+            if grid.get(c).unwrap() == &'X' {
                 [
-                    check_line(&grid, c, (1, 0)),
-                    check_line(&grid, c, (-1, 0)),
-                    check_line(&grid, c, (0, 1)),
-                    check_line(&grid, c, (0, -1)),
-                    check_line(&grid, c, (1, 1)),
-                    check_line(&grid, c, (1, -1)),
-                    check_line(&grid, c, (-1, 1)),
-                    check_line(&grid, c, (-1, -1)),
+                    check_line(&grid, c, Vec2::new(1, 0)),
+                    check_line(&grid, c, Vec2::new(-1, 0)),
+                    check_line(&grid, c, Vec2::new(0, 1)),
+                    check_line(&grid, c, Vec2::new(0, -1)),
+                    check_line(&grid, c, Vec2::new(1, 1)),
+                    check_line(&grid, c, Vec2::new(1, -1)),
+                    check_line(&grid, c, Vec2::new(-1, 1)),
+                    check_line(&grid, c, Vec2::new(-1, -1)),
                 ]
                 .iter()
                 .flatten()
@@ -25,15 +25,10 @@ pub fn solve_part1(input: &str) -> usize {
         .sum()
 }
 
-fn check_line(
-    grid: &Grid<char>,
-    (start_x, start_y): (usize, usize),
-    (direction_x, direction_y): (isize, isize),
-) -> Option<()> {
+fn check_line(grid: &Grid<char>, start: Vec2, direction: Vec2) -> Option<()> {
     for (i, c) in "XMAS".chars().enumerate() {
-        let x = start_x.checked_add_signed(direction_x * i as isize)?;
-        let y = start_y.checked_add_signed(direction_y * i as isize)?;
-        let cell = grid.get_old((x, y))?;
+        let point = start + direction * i as isize;
+        let cell = grid.get(point)?;
         if cell != &c {
             return None;
         }
@@ -45,7 +40,7 @@ pub fn solve_part2(input: &str) -> usize {
     let grid: Grid<char> = input.parse().unwrap();
     grid.coords_iter()
         .map(|c| {
-            if grid.get_old(c).unwrap() == &'A' {
+            if grid.get(c).unwrap() == &'A' {
                 [
                     check_x_mas(&grid, c, Direction::Up),
                     check_x_mas(&grid, c, Direction::Down),
@@ -72,28 +67,24 @@ enum Direction {
 }
 
 impl Direction {
-    fn mas(self) -> impl Iterator<Item = ((isize, isize), char)> {
+    fn mas(self) -> impl Iterator<Item = (Vec2, char)> {
         let mut expects = ['M', 'M', 'S', 'S'];
         expects.rotate_right(self as usize);
         [(1, 1), (-1, 1), (-1, -1), (1, -1)]
+            .map(|v| Vec2::try_from(v).unwrap())
             .into_iter()
             .zip(expects)
     }
 }
 
-fn check_x_mas(
-    grid: &Grid<char>,
-    (start_x, start_y): (usize, usize),
-    direction: Direction,
-) -> Option<()> {
-    let center = grid.get_old((start_x, start_y))?;
+fn check_x_mas(grid: &Grid<char>, start: Vec2, direction: Direction) -> Option<()> {
+    let center = grid.get(start)?;
     if center != &'A' {
         return None;
     }
-    for ((d_x, d_y), expected) in direction.mas() {
-        let x = start_x.checked_add_signed(d_x)?;
-        let y = start_y.checked_add_signed(d_y)?;
-        if grid.get_old((x, y))? != &expected {
+    for (d, expected) in direction.mas() {
+        let n = start + d;
+        if grid.get(n)? != &expected {
             return None;
         }
     }

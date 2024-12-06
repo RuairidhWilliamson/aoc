@@ -6,12 +6,15 @@ pub fn solve_part2(_input: &str) -> usize {
     todo!()
 }
 
+#[cfg(test)]
+const INPUT: &str = "";
+
 // #[test]
 // fn practice_part1() {
-//     todo!()
+//    assert_eq!(solve_part1(INPUT), todo!());
 // }
 
 // #[test]
 // fn practice_part2() {
-//     todo!()
+//    assert_eq!(solve_part2(INPUT), todo!());
 // }

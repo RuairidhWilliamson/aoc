@@ -1,0 +1,41 @@
+[package]
+name = "aoc_helper"
+version = "0.0.0"
+edition.workspace = true
+
+[lints.rust]
+unsafe_code = "warn"
+unused_crate_dependencies = "warn"
+
+[lints.clippy]
+# Cargo
+wildcard_dependencies = "warn"
+
+# Restriction
+allow_attributes = "warn"
+clone_on_ref_ptr = "warn"
+create_dir = "warn"
+dbg_macro = "warn"
+exit = "warn"
+string_to_string = "warn"
+undocumented_unsafe_blocks = "warn"
+unused_result_ok = "warn"
+unused_trait_names = "warn"
+unwrap_used = "warn"
+
+# Nursery
+nursery = { level = "warn", priority = -1 }
+significant_drop_tightening = "allow"
+suboptimal_flops = "allow"
+option_if_let_else = "allow"
+
+# Pedantic
+pedantic = { level = "warn", priority = -1 }
+cast_precision_loss = "allow"
+default_trait_access = "allow"
+missing_errors_doc = "allow"
+module_name_repetitions = "allow"
+
+[dependencies]
+reqwest = { version = "0.12.9", features = ["blocking", "cookies"] }
+yansi = "1.0.1"
