@@ -4,25 +4,27 @@ use std::{fmt::Write as _, str::FromStr};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Grid<T> {
-    data: Vec<T>,
+    data: Box<[T]>,
     width: isize,
 }
 
 impl<T> Grid<T> {
     #[must_use]
-    pub fn new(data: Vec<T>, width: isize) -> Self {
+    pub fn new(data: Box<[T]>, width: isize) -> Self {
         let height = data.len() as isize / width;
         debug_assert_eq!(height * width, data.len() as isize);
         Self { data, width }
     }
 
+    #[inline]
     #[must_use]
     pub const fn width(&self) -> isize {
         self.width
     }
 
+    #[inline]
     #[must_use]
-    pub fn height(&self) -> isize {
+    pub const fn height(&self) -> isize {
         self.data.len() as isize / self.width
     }
 
@@ -42,10 +44,12 @@ impl<T> Grid<T> {
         }
     }
 
+    #[inline]
     pub fn get(&self, c: impl Into<Vec2>) -> Option<&T> {
         self.data.get(self.coord_to_index(c.into())?)
     }
 
+    #[inline]
     pub fn get_mut(&mut self, c: impl Into<Vec2>) -> Option<&mut T> {
         let index = self.coord_to_index(c.into())?;
         self.data.get_mut(index)
@@ -159,7 +163,7 @@ where
             return Err(GridParseError::RowsDifferenWidth);
         }
         let width = width.ok_or(GridParseError::Empty)?;
-        let data: Vec<T> = s
+        let data: Box<[T]> = s
             .lines()
             .flat_map(|l| l.chars())
             .map(|c| T::try_from(c))
@@ -221,6 +225,13 @@ impl std::ops::Add for Vec2 {
     }
 }
 
+impl std::ops::AddAssign for Vec2 {
+    fn add_assign(&mut self, rhs: Self) {
+        self.x += rhs.x;
+        self.y += rhs.y;
+    }
+}
+
 impl std::ops::Mul<isize> for Vec2 {
     type Output = Self;
 
@@ -238,6 +249,13 @@ impl std::ops::Sub for Vec2 {
         self.x -= rhs.x;
         self.y -= rhs.y;
         self
+    }
+}
+
+impl std::ops::SubAssign for Vec2 {
+    fn sub_assign(&mut self, rhs: Self) {
+        self.x -= rhs.x;
+        self.y -= rhs.y;
     }
 }
 

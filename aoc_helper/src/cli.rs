@@ -2,6 +2,7 @@ use std::{
     num::{NonZeroUsize, ParseIntError},
     process::ExitCode,
     str::FromStr,
+    time::Instant,
 };
 
 use yansi::Paint as _;
@@ -132,15 +133,22 @@ impl Selection {
     }
 
     fn run_part1(&self, input: &str, days: &DaysList) {
-        let (part1, _) = &days[self.day.get() - 1];
-        let out = part1(input);
-        println!("{:02}:1 => {}", self.day.get(), out.blue());
+        let (part1, _) = days[self.day.get() - 1];
+        self.run_part(input, 1, part1);
     }
 
     fn run_part2(&self, input: &str, days: &DaysList) {
-        let (_, part2) = &days[self.day.get() - 1];
-        let out = part2(input);
-        println!("{:02}:2 => {}", self.day.get(), out.blue());
+        let (_, part2) = days[self.day.get() - 1];
+        self.run_part(input, 2, part2);
+    }
+
+    fn run_part(&self, input: &str, part: usize, part_fun: SolveFn) {
+        let start = Instant::now();
+        let out = part_fun(input);
+        let elapsed = start.elapsed().as_millis();
+        let day = self.day.get();
+        let out = out.blue();
+        println!("{day:02}:{part} => {out:>20}\t\t{elapsed:>7} ms");
     }
 }
 

@@ -15,3 +15,10 @@ edition = "2021"
 [dependencies]
 aoc_helper.path = "aoc_helper"
 regex = "1.11.1"
+
+[dev-dependencies]
+criterion = "0.5.1"
+
+[[bench]]
+name = "day06"
+harness = false

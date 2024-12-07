@@ -19,7 +19,7 @@ struct Equation {
 
 impl Equation {
     fn parse_lines(input: &str) -> impl Iterator<Item = Self> + use<'_> {
-        input.lines().map(|l| Self::parse(l))
+        input.lines().map(Self::parse)
     }
 
     fn parse(line: &str) -> Self {
@@ -74,7 +74,7 @@ impl Iterator for OperatorChain {
             1 => Operator::Mul,
             _ => unreachable!(),
         };
-        self.0 = self.0 >> 1;
+        self.0 >>= 1;
         Some(out)
     }
 }

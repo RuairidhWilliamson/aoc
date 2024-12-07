@@ -1,26 +1,36 @@
-use std::collections::HashSet;
-
 use aoc_helper::grid::{Direction, Grid, Vec2};
 
 pub fn solve_part1(input: &str) -> usize {
     let mut state = State::parse(input);
-    state.guard_patrol();
+    while !state.guard_patrol_step().is_done() {}
     state.count_visited()
 }
 
 pub fn solve_part2(input: &str) -> usize {
-    let original_state = State::parse(input);
-    let mut first_pass_state = original_state.clone();
-    first_pass_state.guard_patrol();
-    let visited: HashSet<Vec2> = first_pass_state.iter_visited().collect();
-    visited
-        .into_iter()
-        .filter(|&c| {
-            let mut state = original_state.clone();
-            *state.grid.get_mut(c).unwrap() = Cell::Obstacle;
-            state.check_loop_guard_patrol()
-        })
-        .count()
+    let mut first_pass_state = State::parse(input);
+    let mut scratch = first_pass_state.clone();
+    let mut count = 0;
+    loop {
+        let step_result = first_pass_state.guard_patrol_step();
+        match step_result {
+            StepResult::Loop | StepResult::OffGrid => {
+                break;
+            }
+            StepResult::New => {
+                first_pass_state.clone_into(&mut scratch);
+                *scratch
+                    .grid
+                    .get_mut(first_pass_state.guard.position)
+                    .unwrap() = Cell::Obstacle;
+                scratch.guard.position -= Vec2::from(scratch.guard.direction);
+                if scratch.check_loop_guard_patrol() {
+                    count += 1;
+                }
+            }
+            _ => (),
+        }
+    }
+    count
 }
 
 #[derive(Debug, Clone)]
@@ -39,7 +49,7 @@ impl State {
     fn parse(input: &str) -> Self {
         let mut guard: Option<Vec2> = None;
         let width = input.lines().next().unwrap().len();
-        let data: Vec<Cell> = input
+        let data: Box<[Cell]> = input
             .lines()
             .enumerate()
             .flat_map(move |(y, l)| {
@@ -59,7 +69,9 @@ impl State {
                 '^' => {
                     debug_assert!(guard.is_none());
                     guard = Some(coord);
-                    Cell::Empty(Visited([true, false, false, false]))
+                    let mut v = Visited::default();
+                    v.set_visited_direction(Direction::North);
+                    Cell::Empty(v)
                 }
                 _ => panic!("unexpected character {c:?}"),
             })
@@ -73,42 +85,40 @@ impl State {
         }
     }
 
-    fn guard_patrol(&mut self) {
+    fn check_loop_guard_patrol(&mut self) -> bool {
         loop {
-            let new_position = self.guard.position + Vec2::from(self.guard.direction);
-            let Some(cell) = self.grid.get_mut(new_position) else {
-                break;
-            };
-            match cell {
-                Cell::Empty(visited) => {
-                    *visited.get_mut_direction(self.guard.direction) = true;
-                    self.guard.position = new_position;
-                }
-                Cell::Obstacle => {
-                    self.guard.direction = self.guard.direction.rotate_clockwise();
-                }
+            let step_result = self.guard_patrol_step();
+            match step_result {
+                StepResult::Loop => return true,
+                StepResult::OffGrid => return false,
+                _ => (),
             }
         }
     }
 
-    fn check_loop_guard_patrol(&mut self) -> bool {
-        loop {
-            let new_position = self.guard.position + Vec2::from(self.guard.direction);
-            let Some(cell) = self.grid.get_mut(new_position) else {
-                return false;
-            };
-            match cell {
-                Cell::Empty(visited) => {
-                    let v = visited.get_mut_direction(self.guard.direction);
-                    if *v {
-                        return true;
-                    }
-                    *v = true;
-                    self.guard.position = new_position;
+    fn guard_patrol_step(&mut self) -> StepResult {
+        let new_position = self.guard.position + Vec2::from(self.guard.direction);
+        let Some(cell) = self.grid.get_mut(new_position) else {
+            return StepResult::OffGrid;
+        };
+        match cell {
+            Cell::Empty(visited) => {
+                let has_visited_at_all = visited.any();
+                let v = visited.get_direction(self.guard.direction);
+                if v {
+                    return StepResult::Loop;
                 }
-                Cell::Obstacle => {
-                    self.guard.direction = self.guard.direction.rotate_clockwise();
+                visited.set_visited_direction(self.guard.direction);
+                self.guard.position = new_position;
+                if has_visited_at_all {
+                    StepResult::Visited
+                } else {
+                    StepResult::New
                 }
+            }
+            Cell::Obstacle => {
+                self.guard.direction = self.guard.direction.rotate_clockwise();
+                StepResult::Rotated
             }
         }
     }
@@ -119,24 +129,36 @@ impl State {
             .filter(|c| matches!(c, Cell::Empty(v) if v.any()))
             .count()
     }
+}
 
-    fn iter_visited(&self) -> impl Iterator<Item = Vec2> + use<'_> {
-        self.grid
-            .coords_iter()
-            .filter(|c| matches!(self.grid.get(*c).unwrap(), Cell::Empty(v) if v.any()))
+enum StepResult {
+    New,
+    Rotated,
+    Visited,
+    Loop,
+    OffGrid,
+}
+
+impl StepResult {
+    fn is_done(&self) -> bool {
+        matches!(self, Self::Loop | Self::OffGrid)
     }
 }
 
 #[derive(Debug, Default, Clone)]
-struct Visited([bool; 4]);
+struct Visited(u8);
 
 impl Visited {
     fn any(&self) -> bool {
-        self.0.iter().any(|x| *x)
+        self.0 != 0
     }
 
-    fn get_mut_direction(&mut self, d: Direction) -> &mut bool {
-        &mut self.0[u8::from(d) as usize]
+    fn get_direction(&self, d: Direction) -> bool {
+        (self.0 >> u8::from(d)) & 1 == 1
+    }
+
+    fn set_visited_direction(&mut self, d: Direction) {
+        self.0 |= 1 << u8::from(d)
     }
 }
 
