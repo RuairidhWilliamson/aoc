@@ -34,6 +34,7 @@ fn run_inner(year: usize, days: &DaysList) -> Result<(), ()> {
         eprintln!("could not find process arg");
     })?;
 
+    let start = Instant::now();
     let res = if let Some(s) = args.next() {
         let selection: Selection = s.parse().map_err(|err: Error| {
             eprintln!("{}", err.red());
@@ -43,6 +44,8 @@ fn run_inner(year: usize, days: &DaysList) -> Result<(), ()> {
     } else {
         Selection::run_all(year, days)
     };
+    let elapsed = start.elapsed().as_millis();
+    println!("Total Elapsed {elapsed} ms");
 
     res.map_err(|err: Error| {
         eprintln!("{}", err.red());

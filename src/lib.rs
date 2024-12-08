@@ -6,4 +6,5 @@ aoc_helper::days! {
     day05,
     day06,
     day07,
+    day08,
 }

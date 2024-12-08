@@ -90,6 +90,7 @@ impl<'a, T> IntoIterator for &'a Grid<T> {
     }
 }
 
+#[derive(Clone)]
 pub struct GridIter<'a, T> {
     grid: &'a Grid<T>,
     y: isize,
@@ -112,6 +113,7 @@ impl<'a, T> Iterator for GridIter<'a, T> {
     }
 }
 
+#[derive(Clone)]
 pub struct GridRowIter<'a, T> {
     grid: &'a Grid<T>,
     position: Vec2,
