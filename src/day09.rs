@@ -27,7 +27,7 @@ impl FromStr for Disk {
             .chars()
             .map(|size| {
                 assert!(size.is_ascii_digit());
-                let size: usize = size as usize - '0' as usize;
+                let size: u8 = size as u8 - '0' as u8;
                 let b = Block {
                     file_id: if free { None } else { Some(file_id) },
                     size,
@@ -76,6 +76,7 @@ impl Disk {
     fn compact2(&mut self) {
         let mut largest_attempted_file_id = usize::MAX;
         loop {
+            self.remove_trailing_free_blocks();
             let Some((file_block_index, file_block)) = self
                 .blocks
                 .iter()
@@ -124,7 +125,7 @@ impl Disk {
             .iter()
             .map(|b| {
                 let out = b.checksum(position);
-                position += b.size;
+                position += b.size as usize;
                 out
             })
             .sum()
@@ -153,7 +154,7 @@ fn triangle(n: usize) -> usize {
 #[derive(Debug)]
 struct Block {
     file_id: Option<usize>,
-    size: usize,
+    size: u8,
 }
 
 impl Block {
@@ -170,9 +171,9 @@ impl Block {
             return 0;
         };
         if let Some(pos) = NonZeroUsize::new(position) {
-            file_id * (triangle(self.size + pos.get() - 1) - triangle(pos.get() - 1))
+            file_id * (triangle(self.size as usize + pos.get() - 1) - triangle(pos.get() - 1))
         } else {
-            file_id * triangle(self.size - 1)
+            file_id * triangle(self.size as usize - 1)
         }
     }
 }

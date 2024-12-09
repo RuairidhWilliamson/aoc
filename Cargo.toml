@@ -22,3 +22,7 @@ criterion = "0.5.1"
 [[bench]]
 name = "day06"
 harness = false
+
+[[bench]]
+name = "day09"
+harness = false
