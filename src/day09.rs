@@ -1,8 +1,8 @@
 use std::{convert::Infallible, num::NonZeroUsize, str::FromStr};
 
 pub fn solve_part1(input: &str) -> usize {
-    let mut disk: Disk = input.trim().parse().unwrap();
-    disk.compact();
+    let mut disk: Disk2 = input.trim().parse().unwrap();
+    disk.compact1();
     disk.checksum()
 }
 
@@ -27,7 +27,7 @@ impl FromStr for Disk {
             .chars()
             .map(|size| {
                 assert!(size.is_ascii_digit());
-                let size: u8 = size as u8 - '0' as u8;
+                let size: u8 = size as u8 - b'0';
                 let b = Block {
                     file_id: if free { None } else { Some(file_id) },
                     size,
@@ -44,7 +44,8 @@ impl FromStr for Disk {
 }
 
 impl Disk {
-    fn compact(&mut self) {
+    #[allow(dead_code)]
+    fn compact1(&mut self) {
         loop {
             self.remove_trailing_free_blocks();
             let Some((free_block_index, _)) =
@@ -101,11 +102,14 @@ impl Disk {
             };
             self.blocks[file_block_index].file_id = None;
             let free_block = &mut self.blocks[free_block_index];
-            if free_block.size == file_block.size {
-                free_block.file_id = file_block.file_id;
-            } else {
-                free_block.size -= file_block.size;
-                self.blocks.insert(free_block_index, file_block);
+            free_block.file_id = file_block.file_id;
+            if free_block.size != file_block.size {
+                let new_free_block = Block {
+                    file_id: None,
+                    size: free_block.size - file_block.size,
+                };
+                free_block.size = file_block.size;
+                self.blocks.insert(free_block_index + 1, new_free_block);
             }
         }
     }
@@ -178,24 +182,140 @@ impl Block {
     }
 }
 
+struct Disk2 {
+    blocks: Vec<Option<usize>>,
+}
+
+impl FromStr for Disk2 {
+    type Err = Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut free = false;
+        let mut file_id = 0;
+        let blocks: Vec<Option<usize>> = s
+            .chars()
+            .flat_map(|size| {
+                assert!(size.is_ascii_digit());
+                let size: u8 = size as u8 - b'0';
+                let b = if free { None } else { Some(file_id) };
+                if !free {
+                    file_id += 1;
+                }
+                free = !free;
+                (0..size).map(move |_| b)
+            })
+            .collect();
+        Ok(Self { blocks })
+    }
+}
+
+impl Disk2 {
+    fn compact1(&mut self) {
+        let mut start = 0;
+        let mut end = usize::MAX;
+        loop {
+            let Some((free_block_index, _)) = self
+                .blocks
+                .iter()
+                .enumerate()
+                .skip(start)
+                .find(|(_, id)| id.is_none())
+            else {
+                return;
+            };
+            let Some((file_block_index, _)) = self
+                .blocks
+                .iter()
+                .enumerate()
+                .take(end)
+                .skip(free_block_index)
+                .rfind(|(_, id)| id.is_some())
+            else {
+                return;
+            };
+            start = free_block_index;
+            end = file_block_index;
+            self.blocks.swap(free_block_index, file_block_index);
+        }
+    }
+
+    #[allow(dead_code)]
+    fn compact2(&mut self) {
+        let mut end = usize::MAX;
+        loop {
+            let Some((file_block_index, file_block)) = self
+                .blocks
+                .iter()
+                .enumerate()
+                .take(end)
+                .rfind(|(_, id)| id.is_some())
+            else {
+                return;
+            };
+            let size = self
+                .blocks
+                .iter()
+                .take(file_block_index)
+                .rev()
+                .take_while(|&id| id == file_block)
+                .count()
+                + 1;
+            end = file_block_index + 1 - size;
+            debug_assert!((1..=9).contains(&size));
+            let Some(free_index) = self.find_free_blocks(size, 0, file_block_index) else {
+                continue;
+            };
+            for i in 0..size {
+                self.blocks.swap(free_index - i, file_block_index - i);
+            }
+        }
+    }
+
+    fn find_free_blocks(&self, size: usize, start_index: usize, end_index: usize) -> Option<usize> {
+        let mut i = start_index;
+        let mut free_acc = 0;
+        while i < end_index {
+            if self.blocks[i].is_none() {
+                free_acc += 1;
+            } else {
+                free_acc = 0;
+            }
+            if free_acc >= size {
+                return Some(i);
+            }
+            i += 1;
+        }
+        None
+    }
+
+    fn checksum(&self) -> usize {
+        self.blocks
+            .iter()
+            .enumerate()
+            .map(|(pos, id)| pos * id.unwrap_or_default())
+            .sum()
+    }
+}
+
+impl std::fmt::Display for Disk2 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for b in &self.blocks {
+            if let Some(b) = b {
+                f.write_fmt(format_args!("{b}"))?;
+            } else {
+                f.write_str(".")?;
+            }
+        }
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 const INPUT: &str = "2333133121414131402";
 
 #[test]
 fn practice_part1() {
     assert_eq!(solve_part1(INPUT), 1928);
-}
-
-#[test]
-fn block_checksum() {
-    assert_eq!(
-        Block {
-            file_id: Some(1),
-            size: 2
-        }
-        .checksum(0),
-        1
-    );
 }
 
 #[test]
