@@ -129,14 +129,24 @@ impl<'a, T> Iterator for GridRowIter<'a, T> {
     }
 }
 
+pub trait DisplayableChar {
+    fn display_as_char(&self) -> char;
+}
+
+impl DisplayableChar for char {
+    fn display_as_char(&self) -> char {
+        *self
+    }
+}
+
 impl<T> std::fmt::Display for Grid<T>
 where
-    for<'a> &'a T: Into<char>,
+    T: DisplayableChar,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for row in self {
             for cell in row {
-                let c: char = cell.into();
+                let c: char = cell.display_as_char();
                 f.write_char(c)?;
             }
             f.write_char('\n')?;
@@ -292,6 +302,11 @@ impl Direction {
             Self::South => Self::West,
             Self::West => Self::North,
         }
+    }
+
+    #[must_use]
+    pub const fn variants_as_array() -> [Self; 4] {
+        [Self::North, Self::East, Self::South, Self::West]
     }
 }
 
