@@ -45,13 +45,15 @@ impl<T> Grid<T> {
     }
 
     #[inline]
-    pub fn get(&self, c: impl Into<Vec2>) -> Option<&T> {
-        self.data.get(self.coord_to_index(c.into())?)
+    #[must_use]
+    pub fn get(&self, c: Vec2) -> Option<&T> {
+        self.data.get(self.coord_to_index(c)?)
     }
 
     #[inline]
-    pub fn get_mut(&mut self, c: impl Into<Vec2>) -> Option<&mut T> {
-        let index = self.coord_to_index(c.into())?;
+    #[must_use]
+    pub fn get_mut(&mut self, c: Vec2) -> Option<&mut T> {
+        let index = self.coord_to_index(c)?;
         self.data.get_mut(index)
     }
 
@@ -59,9 +61,9 @@ impl<T> Grid<T> {
     ///
     /// # Panics
     /// Panics if `a` or `b` is out of bounds
-    pub fn swap(&mut self, a: impl Into<Vec2>, b: impl Into<Vec2>) {
-        let a = self.coord_to_index(a.into()).expect("a is out of bounds");
-        let b = self.coord_to_index(b.into()).expect("b is out of bounds");
+    pub fn swap(&mut self, a: Vec2, b: Vec2) {
+        let a = self.coord_to_index(a).expect("a is out of bounds");
+        let b = self.coord_to_index(b).expect("b is out of bounds");
         self.data.swap(a, b);
     }
 
@@ -224,6 +226,11 @@ impl Vec2 {
     #[must_use]
     pub const fn new(x: isize, y: isize) -> Self {
         Self { x, y }
+    }
+
+    #[must_use]
+    pub fn adjacents(self) -> [Self; 4] {
+        Direction::variants_as_array().map(|d| self + d.into())
     }
 }
 
