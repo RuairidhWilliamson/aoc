@@ -1,13 +1,13 @@
 use std::collections::{HashMap, HashSet};
 
-use aoc_helper::grid::{Direction, Grid, Vec2};
+use aoc_helper::grid::{Direction, Grid, GridCell, Vec2};
 
 struct Cell(u8);
 
-impl TryFrom<char> for Cell {
-    type Error = &'static str;
+impl GridCell for Cell {
+    type Err = &'static str;
 
-    fn try_from(c: char) -> Result<Self, Self::Error> {
+    fn char_to_cell(c: char) -> Result<Self, Self::Err> {
         if c.is_ascii_digit() {
             Ok(Self(c as u8 - b'0'))
         } else {

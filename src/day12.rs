@@ -1,6 +1,6 @@
 use std::convert::Infallible;
 
-use aoc_helper::grid::{Direction, Grid, Vec2};
+use aoc_helper::grid::{Direction, Grid, GridCell, Vec2};
 
 pub fn solve_part1(input: &str) -> usize {
     let mut garden: Garden = Garden::parse(input);
@@ -18,10 +18,10 @@ struct Cell {
     visited: bool,
 }
 
-impl TryFrom<char> for Cell {
-    type Error = Infallible;
+impl GridCell for Cell {
+    type Err = Infallible;
 
-    fn try_from(c: char) -> Result<Self, Self::Error> {
+    fn char_to_cell(c: char) -> Result<Self, Self::Err> {
         Ok(Self {
             plot: c,
             visited: false,
@@ -158,11 +158,6 @@ BBCD
 BBCC
 EEEC";
 
-#[test]
-fn practice_part1_input1() {
-    assert_eq!(solve_part1(INPUT1), 140);
-}
-
 #[cfg(test)]
 const INPUT2: &str = "RRRRIICCFF
 RRRRIICCCF
@@ -174,6 +169,11 @@ VVIIICJJEE
 MIIIIIJJEE
 MIIISIJEEE
 MMMISSJEEE";
+
+#[test]
+fn practice_part1_input1() {
+    assert_eq!(solve_part1(INPUT1), 140);
+}
 
 #[test]
 fn practice_part1_input2() {

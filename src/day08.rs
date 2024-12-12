@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use aoc_helper::grid::{Grid, Vec2};
+use aoc_helper::grid::{Grid, GridCell, Vec2};
 
 pub fn solve_part1(input: &str) -> usize {
     let grid: Grid<Cell> = input.parse().unwrap();
@@ -83,10 +83,10 @@ enum Cell {
     Antenna(Frequency),
 }
 
-impl TryFrom<char> for Cell {
-    type Error = &'static str;
+impl GridCell for Cell {
+    type Err = &'static str;
 
-    fn try_from(c: char) -> Result<Self, Self::Error> {
+    fn char_to_cell(c: char) -> Result<Self, Self::Err> {
         match c {
             '.' => Ok(Self::Empty),
             'a'..='z' | 'A'..='Z' | '0'..='9' => Ok(Self::Antenna(Frequency(c))),

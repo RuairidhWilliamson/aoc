@@ -1,9 +1,11 @@
 #![allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
 
-use std::{fmt::Write as _, str::FromStr};
+use std::{convert::Infallible, fmt::Write as _, str::FromStr};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Grid<T> {
+    // Use `Box<[T]>` so that we don't have extra capacity allocated that we would end up copying on clone
+    // Since we don't provide a way to resize the grid this is fine
     data: Box<[T]>,
     width: isize,
 }
@@ -16,12 +18,14 @@ impl<T> Grid<T> {
         Self { data, width }
     }
 
+    /// Gets the width of the grid
     #[inline]
     #[must_use]
     pub const fn width(&self) -> isize {
         self.width
     }
 
+    /// Gets the height of the grid
     #[inline]
     #[must_use]
     pub const fn height(&self) -> isize {
@@ -67,17 +71,19 @@ impl<T> Grid<T> {
         self.data.swap(a, b);
     }
 
+    /// Create an iterator over the coordinates of the grid
     pub fn coords_iter(&self) -> impl Iterator<Item = Vec2> {
         let height = self.height();
         let width = self.width();
         (0..height).flat_map(move |y| (0..width).map(move |x| Vec2 { x, y }))
     }
 
+    /// Creates an iterator over every element of the grid without separating rows
     pub fn flat_iter(&self) -> impl Iterator<Item = &T> {
         self.data.iter()
     }
 
-    #[must_use]
+    /// Creates an iterator over every row in the grid which in turn can be iterated over to get each cell in that row
     pub const fn iter(&self) -> GridIter<'_, T> {
         GridIter { grid: self, y: 0 }
     }
@@ -92,6 +98,7 @@ impl<'a, T> IntoIterator for &'a Grid<T> {
     }
 }
 
+#[must_use]
 #[derive(Clone)]
 pub struct GridIter<'a, T> {
     grid: &'a Grid<T>,
@@ -115,6 +122,7 @@ impl<'a, T> Iterator for GridIter<'a, T> {
     }
 }
 
+#[must_use]
 #[derive(Clone)]
 pub struct GridRowIter<'a, T> {
     grid: &'a Grid<T>,
@@ -157,11 +165,28 @@ where
     }
 }
 
+/// A trait to allow parsing a char to a grid cell in a grid
+///
+/// We could use `TryFrom<char>` but it is easier to have our own trait that we explicitly implement.
+pub trait GridCell: Sized {
+    type Err;
+
+    fn char_to_cell(c: char) -> Result<Self, Self::Err>;
+}
+
+impl GridCell for char {
+    type Err = Infallible;
+
+    fn char_to_cell(c: char) -> Result<Self, Self::Err> {
+        Ok(c)
+    }
+}
+
 impl<T> FromStr for Grid<T>
 where
-    T: TryFrom<char>,
+    T: GridCell,
 {
-    type Err = GridParseError<T::Error>;
+    type Err = GridParseError<T::Err>;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut width = None;
@@ -180,8 +205,8 @@ where
         let data: Box<[T]> = s
             .lines()
             .flat_map(|l| l.chars())
-            .map(|c| T::try_from(c))
-            .collect::<Result<_, T::Error>>()?;
+            .map(|c| T::char_to_cell(c))
+            .collect::<Result<_, T::Err>>()?;
         let height = data.len() as isize / width;
         debug_assert_eq!(data.len() as isize, width * height);
         Ok(Self { data, width })
@@ -308,6 +333,16 @@ impl Direction {
             Self::East => Self::South,
             Self::South => Self::West,
             Self::West => Self::North,
+        }
+    }
+
+    #[must_use]
+    pub const fn rotate_anticlockwise(self) -> Self {
+        match self {
+            Self::North => Self::West,
+            Self::East => Self::North,
+            Self::South => Self::East,
+            Self::West => Self::South,
         }
     }
 
