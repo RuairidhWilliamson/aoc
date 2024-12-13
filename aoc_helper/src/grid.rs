@@ -257,6 +257,22 @@ impl Vec2 {
     pub fn adjacents(self) -> [Self; 4] {
         Direction::variants_as_array().map(|d| self + d.into())
     }
+
+    #[must_use]
+    pub fn checked_div(self, other: Self) -> Option<Self> {
+        Some(Self {
+            x: self.x.checked_div(other.x)?,
+            y: self.y.checked_div(other.y)?,
+        })
+    }
+
+    #[must_use]
+    pub const fn rem_euclid(self, other: Self) -> Self {
+        Self {
+            x: self.x.rem_euclid(other.x),
+            y: self.y.rem_euclid(other.y),
+        }
+    }
 }
 
 impl std::ops::Add for Vec2 {
@@ -300,6 +316,23 @@ impl std::ops::SubAssign for Vec2 {
     fn sub_assign(&mut self, rhs: Self) {
         self.x -= rhs.x;
         self.y -= rhs.y;
+    }
+}
+
+impl std::ops::Div for Vec2 {
+    type Output = Self;
+
+    fn div(mut self, rhs: Self) -> Self::Output {
+        self.x /= rhs.x;
+        self.y /= rhs.y;
+        self
+    }
+}
+
+impl std::ops::DivAssign for Vec2 {
+    fn div_assign(&mut self, rhs: Self) {
+        self.x /= rhs.x;
+        self.y /= rhs.y;
     }
 }
 
