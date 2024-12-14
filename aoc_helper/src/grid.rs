@@ -273,6 +273,11 @@ impl Vec2 {
             y: self.y.rem_euclid(other.y),
         }
     }
+
+    #[must_use]
+    pub const fn l1_norm(self) -> usize {
+        self.x.unsigned_abs() + self.y.unsigned_abs()
+    }
 }
 
 impl std::ops::Add for Vec2 {
