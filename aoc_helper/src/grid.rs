@@ -297,6 +297,16 @@ impl std::ops::AddAssign for Vec2 {
     }
 }
 
+impl std::ops::Mul<Self> for Vec2 {
+    type Output = Self;
+
+    fn mul(mut self, rhs: Self) -> Self::Output {
+        self.x *= rhs.x;
+        self.y *= rhs.y;
+        self
+    }
+}
+
 impl std::ops::Mul<isize> for Vec2 {
     type Output = Self;
 
