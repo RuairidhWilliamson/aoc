@@ -87,6 +87,38 @@ impl<T> Grid<T> {
     pub const fn iter(&self) -> GridIter<'_, T> {
         GridIter { grid: self, y: 0 }
     }
+
+    pub fn parse_with<E>(
+        s: &str,
+        mut func: impl FnMut(Vec2, char) -> Result<T, E>,
+    ) -> Result<Self, GridParseError<E>> {
+        let mut width = None;
+        if !s.lines().all(|l| {
+            let w = l.chars().count() as isize;
+            if let Some(expected_width) = width {
+                expected_width == w
+            } else {
+                width = Some(w);
+                true
+            }
+        }) {
+            return Err(GridParseError::RowsDifferenWidth);
+        }
+        let width = width.ok_or(GridParseError::Empty)?;
+        let data: Box<[T]> = s
+            .lines()
+            .enumerate()
+            .flat_map(|(y, l)| {
+                l.chars()
+                    .enumerate()
+                    .map(move |(x, c)| (Vec2::new(x as isize, y as isize), c))
+            })
+            .map(|(v, c)| func(v, c))
+            .collect::<Result<_, E>>()?;
+        let height = data.len() as isize / width;
+        debug_assert_eq!(data.len() as isize, width * height);
+        Ok(Self { data, width })
+    }
 }
 
 impl<'a, T> IntoIterator for &'a Grid<T> {
@@ -189,27 +221,7 @@ where
     type Err = GridParseError<T::Err>;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut width = None;
-        if !s.lines().all(|l| {
-            let w = l.chars().count() as isize;
-            if let Some(expected_width) = width {
-                expected_width == w
-            } else {
-                width = Some(w);
-                true
-            }
-        }) {
-            return Err(GridParseError::RowsDifferenWidth);
-        }
-        let width = width.ok_or(GridParseError::Empty)?;
-        let data: Box<[T]> = s
-            .lines()
-            .flat_map(|l| l.chars())
-            .map(|c| T::char_to_cell(c))
-            .collect::<Result<_, T::Err>>()?;
-        let height = data.len() as isize / width;
-        debug_assert_eq!(data.len() as isize, width * height);
-        Ok(Self { data, width })
+        Self::parse_with(s, |_, c| -> Result<T, T::Err> { T::char_to_cell(c) })
     }
 }
 
@@ -241,7 +253,7 @@ where
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Vec2 {
     pub x: isize,
     pub y: isize,
@@ -365,7 +377,7 @@ where
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Direction {
     North,
     East,
