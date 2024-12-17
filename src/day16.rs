@@ -72,7 +72,7 @@ impl Map {
                 }
             }
         }
-        todo!()
+        panic!("search failed")
     }
 
     fn search_all(&self) -> usize {
@@ -109,7 +109,7 @@ impl Map {
                 }
             }
         }
-        unreachable!()
+        panic!("search failed")
     }
 
     fn reconstruct(&self, final_cost: usize, g_map: &HashMap<State, usize>) -> usize {

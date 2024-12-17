@@ -15,4 +15,5 @@ aoc_helper::days! {
     day14,
     day15,
     day16,
+    day17,
 }
