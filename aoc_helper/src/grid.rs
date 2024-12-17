@@ -265,11 +265,13 @@ impl Vec2 {
         Self { x, y }
     }
 
+    #[inline]
     #[must_use]
     pub fn adjacents(self) -> [Self; 4] {
         Direction::variants_as_array().map(|d| self + d.into())
     }
 
+    #[inline]
     #[must_use]
     pub fn checked_div(self, other: Self) -> Option<Self> {
         Some(Self {
@@ -278,6 +280,7 @@ impl Vec2 {
         })
     }
 
+    #[inline]
     #[must_use]
     pub const fn rem_euclid(self, other: Self) -> Self {
         Self {
@@ -286,6 +289,7 @@ impl Vec2 {
         }
     }
 
+    #[inline]
     #[must_use]
     pub const fn l1_norm(self) -> usize {
         self.x.unsigned_abs() + self.y.unsigned_abs()
@@ -295,6 +299,7 @@ impl Vec2 {
 impl std::ops::Add for Vec2 {
     type Output = Self;
 
+    #[inline]
     fn add(mut self, rhs: Self) -> Self::Output {
         self.x += rhs.x;
         self.y += rhs.y;
@@ -303,6 +308,7 @@ impl std::ops::Add for Vec2 {
 }
 
 impl std::ops::AddAssign for Vec2 {
+    #[inline]
     fn add_assign(&mut self, rhs: Self) {
         self.x += rhs.x;
         self.y += rhs.y;
@@ -312,6 +318,7 @@ impl std::ops::AddAssign for Vec2 {
 impl std::ops::Mul<Self> for Vec2 {
     type Output = Self;
 
+    #[inline]
     fn mul(mut self, rhs: Self) -> Self::Output {
         self.x *= rhs.x;
         self.y *= rhs.y;
@@ -322,6 +329,7 @@ impl std::ops::Mul<Self> for Vec2 {
 impl std::ops::Mul<isize> for Vec2 {
     type Output = Self;
 
+    #[inline]
     fn mul(mut self, rhs: isize) -> Self::Output {
         self.x *= rhs;
         self.y *= rhs;
@@ -332,6 +340,7 @@ impl std::ops::Mul<isize> for Vec2 {
 impl std::ops::Sub for Vec2 {
     type Output = Self;
 
+    #[inline]
     fn sub(mut self, rhs: Self) -> Self::Output {
         self.x -= rhs.x;
         self.y -= rhs.y;
@@ -340,6 +349,7 @@ impl std::ops::Sub for Vec2 {
 }
 
 impl std::ops::SubAssign for Vec2 {
+    #[inline]
     fn sub_assign(&mut self, rhs: Self) {
         self.x -= rhs.x;
         self.y -= rhs.y;
@@ -349,6 +359,7 @@ impl std::ops::SubAssign for Vec2 {
 impl std::ops::Div for Vec2 {
     type Output = Self;
 
+    #[inline]
     fn div(mut self, rhs: Self) -> Self::Output {
         self.x /= rhs.x;
         self.y /= rhs.y;
@@ -357,6 +368,7 @@ impl std::ops::Div for Vec2 {
 }
 
 impl std::ops::DivAssign for Vec2 {
+    #[inline]
     fn div_assign(&mut self, rhs: Self) {
         self.x /= rhs.x;
         self.y /= rhs.y;

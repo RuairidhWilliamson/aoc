@@ -79,40 +79,29 @@ fn display_grid(space: &Space, robots: impl Iterator<Item = Vec2>) {
     println!("{g}");
 }
 
-fn count_adjacent(robots: &[Robot]) -> usize {
-    let mut count = 0;
-    for a in 0..robots.len() {
-        for b in 0..a {
-            if (robots[a].position - robots[b].position).l1_norm() == 1 {
-                count += 1;
-            }
-        }
-    }
-    count
-}
-
 pub fn solve_part2(input: &str) -> usize {
     let space = Space {
         size: Vec2::new(101, 103),
     };
-    let mut robots: Vec<Robot> = Robot::parse(input).collect();
-    let desired_adj = 500;
+    let robots: Vec<Robot> = Robot::parse(input).collect();
+    let desired_h = 15000; // Value chosen by manually searching for tree
     for i in 1..10000 {
-        robots
-            .iter_mut()
-            .for_each(|r| r.position = r.simulate(&space, 1));
-        let adj = count_adjacent(&robots);
-        if adj > desired_adj {
+        let h: usize = robots
+            .iter()
+            .map(|r| (r.simulate(&space, i) - space.size / Vec2::new(2, 2)).l1_norm())
+            .sum();
+
+        if h < desired_h {
             return i;
             // Used to manually search through increasing adjacency numbers until we display the tree
-            // println!("{i} => {adj}");
-            // display_grid(&space, robots.iter().map(|r| r.position));
+            // println!("{i} => {h}");
+            // display_grid(&space, robots.iter().map(|r| r.simulate(&space, i)));
             // let mut s = String::new();
             // std::io::stdin().read_line(&mut s).unwrap();
-            // desired_adj = adj;
+            // desired_h = h;
         }
     }
-    0
+    panic!("no answer")
 }
 
 #[cfg(test)]
