@@ -11,23 +11,44 @@ use yansi::Paint as _;
 macro_rules! days {
     ($($day:ident,)*) => {
         $(pub mod $day;)*
-        pub static DAYS: &$crate::cli::DaysList = &[
-            $(($day::solve_part1, $day::solve_part2),)*
-        ];
+
+        pub fn days() -> $crate::cli::DaysList {
+            vec![
+                $(($crate::cli::SolveFnMagic::new($day::solve_part1), $crate::cli::SolveFnMagic::new($day::solve_part2)),)*
+            ]
+        }
     }
 }
 
 pub type SolveFn = fn(&str) -> usize;
-pub type DaysList = [(SolveFn, SolveFn)];
 
-pub fn run(year: usize, days: &DaysList) -> ExitCode {
+pub struct SolveFnMagic(Box<InnerFn>);
+
+type InnerFn = dyn Fn(&str) -> Box<dyn std::fmt::Display>;
+
+impl SolveFnMagic {
+    pub fn new<T: std::fmt::Display + 'static>(f: impl (Fn(&str) -> T) + 'static) -> Self {
+        Self(Box::new(move |input: &str| -> Box<dyn std::fmt::Display> {
+            Box::new(f(input))
+        }))
+    }
+
+    fn run(&self, input: &str) -> Box<dyn std::fmt::Display> {
+        self.0(input)
+    }
+}
+
+pub type DaysList = Vec<(SolveFnMagic, SolveFnMagic)>;
+
+#[must_use]
+pub fn run(year: usize, days: &[(SolveFnMagic, SolveFnMagic)]) -> ExitCode {
     match run_inner(year, days) {
         Ok(()) => ExitCode::SUCCESS,
         Err(()) => ExitCode::FAILURE,
     }
 }
 
-fn run_inner(year: usize, days: &DaysList) -> Result<(), ()> {
+fn run_inner(year: usize, days: &[(SolveFnMagic, SolveFnMagic)]) -> Result<(), ()> {
     let mut args = std::env::args();
     // skip process arg
     args.next().ok_or_else(|| {
@@ -108,7 +129,7 @@ impl FromStr for Selection {
 }
 
 impl Selection {
-    fn run_all(year: usize, days: &DaysList) -> Result<(), Error> {
+    fn run_all(year: usize, days: &[(SolveFnMagic, SolveFnMagic)]) -> Result<(), Error> {
         for d in 1..=days.len() {
             Self {
                 day: NonZeroUsize::new(d).expect("DAYS array is empty"),
@@ -119,7 +140,7 @@ impl Selection {
         Ok(())
     }
 
-    fn run(&self, year: usize, days: &DaysList) -> Result<(), Error> {
+    fn run(&self, year: usize, days: &[(SolveFnMagic, SolveFnMagic)]) -> Result<(), Error> {
         if self.day.get() > days.len() {
             return Err(Error::DayDoesNotExistYet);
         }
@@ -135,19 +156,19 @@ impl Selection {
         Ok(())
     }
 
-    fn run_part1(&self, input: &str, days: &DaysList) {
-        let (part1, _) = days[self.day.get() - 1];
+    fn run_part1(&self, input: &str, days: &[(SolveFnMagic, SolveFnMagic)]) {
+        let (part1, _) = &days[self.day.get() - 1];
         self.run_part(input, 1, part1);
     }
 
-    fn run_part2(&self, input: &str, days: &DaysList) {
-        let (_, part2) = days[self.day.get() - 1];
+    fn run_part2(&self, input: &str, days: &[(SolveFnMagic, SolveFnMagic)]) {
+        let (_, part2) = &days[self.day.get() - 1];
         self.run_part(input, 2, part2);
     }
 
-    fn run_part(&self, input: &str, part: usize, part_fun: SolveFn) {
+    fn run_part(&self, input: &str, part: usize, part_fun: &SolveFnMagic) {
         let start = Instant::now();
-        let out = part_fun(input);
+        let out = part_fun.run(input);
         let elapsed = start.elapsed().as_millis();
         let day = self.day.get();
         let out = out.blue();

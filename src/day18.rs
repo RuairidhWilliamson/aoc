@@ -9,10 +9,9 @@ pub fn solve_part1(input: &str) -> usize {
     Map::new(71, parse(input)).shortest_path(1024).unwrap()
 }
 
-pub fn solve_part2(input: &str) -> usize {
+pub fn solve_part2(input: &str) -> Vec2 {
     let i = Map::new(71, parse(input)).first_byte_no_route();
-    dbg!(parse(input).nth(i).unwrap());
-    i
+    parse(input).nth(i).unwrap()
 }
 
 fn parse(input: &str) -> impl Iterator<Item = Vec2> + use<'_> {

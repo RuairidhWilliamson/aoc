@@ -1,8 +1,13 @@
-pub fn solve_part1(input: &str) -> usize {
+pub fn solve_part1(input: &str) -> String {
     let (r, p) = parse_puzzle(input);
     let mut execution = Execution::new(&p, r);
     execution.run();
-    execution.debugger_value()
+    execution
+        .debugger
+        .into_iter()
+        .map(|i| i.to_string())
+        .collect::<Vec<_>>()
+        .join(",")
 }
 
 pub fn solve_part2(input: &str) -> usize {
@@ -234,15 +239,6 @@ impl<'a> Execution<'a> {
         }
     }
 
-    fn debugger_value(&self) -> usize {
-        self.debugger
-            .iter()
-            .rev()
-            .enumerate()
-            .map(|(i, x)| *x as usize * 10usize.pow(i as u32))
-            .sum()
-    }
-
     fn debugger_matches_program(&self) -> bool {
         self.debugger == self.program.instructions
     }
@@ -262,7 +258,7 @@ Program: 0,1,5,4,3,0";
 
 #[test]
 fn practice_part1() {
-    assert_eq!(solve_part1(INPUT), 4635635210);
+    assert_eq!(solve_part1(INPUT), "4,6,3,5,6,3,5,2,1,0");
 }
 
 #[test]

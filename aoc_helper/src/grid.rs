@@ -296,6 +296,13 @@ impl Vec2 {
     }
 }
 
+impl std::fmt::Display for Vec2 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let Self { x, y } = self;
+        f.pad(&format!("{x},{y}"))
+    }
+}
+
 impl std::ops::Add for Vec2 {
     type Output = Self;
 
