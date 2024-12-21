@@ -10,6 +10,17 @@ pub struct Grid<T> {
     width: isize,
 }
 
+impl<T> Grid<T>
+where
+    T: Default,
+{
+    #[must_use]
+    pub fn new_with_default(width: isize, height: isize) -> Self {
+        let size = width * height;
+        Self::new((0..size).map(|_| T::default()).collect(), width)
+    }
+}
+
 impl<T> Grid<T> {
     #[must_use]
     pub fn new(data: Box<[T]>, width: isize) -> Self {
@@ -118,6 +129,20 @@ impl<T> Grid<T> {
         let height = data.len() as isize / width;
         debug_assert_eq!(data.len() as isize, width * height);
         Ok(Self { data, width })
+    }
+
+    pub fn display_with(&self, func: impl Fn(Vec2, &T) -> char) {
+        for y in 0..self.height() {
+            for x in 0..self.width() {
+                let v = Vec2::new(x, y);
+                let Some(c) = self.get(v) else {
+                    unreachable!();
+                };
+                let c: char = func(v, c);
+                print!("{c}");
+            }
+            println!();
+        }
     }
 }
 
