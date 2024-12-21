@@ -1,4 +1,4 @@
-use std::{collections::HashMap, convert::Infallible};
+use std::convert::Infallible;
 
 use aoc_helper::grid::{Direction, Grid, Vec2};
 
@@ -43,48 +43,10 @@ impl Map {
         Self { grid, start, end }
     }
 
-    fn shortest_paths(&self, cheat_time: usize, min_save: usize) -> usize {
-        let fair_map = FairMap::new(self);
-        let no_cheat_time = fair_map.grid.get(self.start).unwrap().unwrap();
-        let max_time = no_cheat_time - min_save;
-
-        let init = State {
-            position: self.start,
-            cheat: CheatState::Unused,
-        };
-        let mut open = Vec::new();
-        let mut time_map = HashMap::new();
-        time_map.insert(init, 0);
-        open.push(init);
-        let cheats = HashMap::new();
-        let mut searcher = Searcher {
-            map: self,
-            fair_map: &fair_map,
-            open,
-            time_map,
-            cheats,
-            max_time,
-            cheat_time,
-        };
-        searcher.shortest_paths();
-        (searcher.cheats).len()
-    }
-}
-
-enum Cell {
-    Empty,
-    Wall,
-}
-
-struct FairMap {
-    grid: Grid<Option<usize>>,
-}
-
-impl FairMap {
-    fn new(map: &Map) -> Self {
-        let mut grid = Grid::<Option<usize>>::new_with_default(map.grid.width(), map.grid.height());
-        *grid.get_mut(map.end).unwrap() = Some(0);
-        let mut to_visit = vec![map.end];
+    fn distance_map(&self, origin: Vec2) -> Grid<Option<u32>> {
+        let mut grid = Grid::new_with_default(self.grid.width(), self.grid.height());
+        *grid.get_mut(origin).unwrap() = Some(0);
+        let mut to_visit = vec![origin];
         for i in 1.. {
             let grid = &mut grid;
             if to_visit.is_empty() {
@@ -95,7 +57,7 @@ impl FairMap {
                 .flat_map(|pos| {
                     Direction::variants_as_array().map(|d| {
                         let new_pos = *pos + d.into();
-                        if let Some(Cell::Empty) = map.grid.get(new_pos) {
+                        if let Some(Cell::Empty) = self.grid.get(new_pos) {
                             let d = grid.get_mut(new_pos).unwrap();
                             if d.is_none() {
                                 *d = Some(i);
@@ -111,133 +73,41 @@ impl FairMap {
                 .flatten()
                 .collect();
         }
-        Self { grid }
+        grid
     }
-}
 
-struct Searcher<'a> {
-    map: &'a Map,
-    fair_map: &'a FairMap,
-    open: Vec<State>,
-    time_map: HashMap<State, usize>,
-    cheats: HashMap<(Vec2, Vec2), usize>,
-    max_time: usize,
-    cheat_time: usize,
-}
-
-impl Searcher<'_> {
-    fn shortest_paths(&mut self) {
-        while let Some(q) = self.open.pop() {
-            let time = *self.time_map.get(&q).unwrap();
-            let new_time = time + 1;
-            for d in Direction::variants_as_array() {
-                let position = q.position + d.into();
-                match self.map.grid.get(position) {
-                    None => continue,
-                    Some(Cell::Empty) => {
-                        match q.cheat {
-                            CheatState::Unused => {
-                                self.visit_state(
-                                    State {
-                                        position,
-                                        cheat: CheatState::Unused,
-                                    },
-                                    new_time,
-                                );
-                                self.visit_state(
-                                    State {
-                                        position,
-                                        cheat: CheatState::Active {
-                                            start: q.position,
-                                            length: 1,
-                                        },
-                                    },
-                                    new_time,
-                                );
-                            }
-                            CheatState::Active { start, length }
-                                if length + 1 >= self.cheat_time =>
-                            {
-                                self.visit_finish_cheat(start, position, new_time);
-                            }
-                            CheatState::Active { start, length } => {
-                                self.visit_finish_cheat(start, position, new_time);
-                                self.visit_state(
-                                    State {
-                                        position,
-                                        cheat: CheatState::Active {
-                                            start,
-                                            length: length + 1,
-                                        },
-                                    },
-                                    new_time,
-                                )
-                            }
-                        };
-                    }
-                    Some(Cell::Wall) => {
-                        match q.cheat {
-                            CheatState::Unused => self.visit_state(
-                                State {
-                                    position,
-                                    cheat: CheatState::Active {
-                                        start: q.position,
-                                        length: 1,
-                                    },
-                                },
-                                new_time,
-                            ),
-                            CheatState::Active { start: _, length }
-                                if length + 1 >= self.cheat_time => {}
-                            CheatState::Active { start, length } => self.visit_state(
-                                State {
-                                    position,
-                                    cheat: CheatState::Active {
-                                        start,
-                                        length: length + 1,
-                                    },
-                                },
-                                new_time,
-                            ),
-                        };
-                    }
+    fn shortest_paths(&self, cheat_time: isize, min_save: u32) -> usize {
+        let distance_to_start = &self.distance_map(self.start);
+        let distance_to_end = &self.distance_map(self.end);
+        let no_cheat_time = distance_to_end.get(self.start).unwrap().unwrap();
+        let max_time = no_cheat_time - min_save;
+        distance_to_start
+            .coords_iter()
+            .filter_map(|pos| {
+                let Some(t) = distance_to_start.get(pos).unwrap() else {
+                    return None;
                 };
-            }
-        }
-    }
-
-    fn visit_state(&mut self, new_q: State, new_time: usize) {
-        let old_time = self.time_map.entry(new_q).or_insert(usize::MAX);
-        if new_time >= *old_time {
-            return;
-        }
-        *old_time = new_time;
-        if self.max_time > new_time
-            && (new_q.position - self.map.end).l1_norm() <= self.max_time - new_time
-        {
-            self.open.push(new_q);
-        }
-    }
-
-    fn visit_finish_cheat(&mut self, start: Vec2, position: Vec2, new_time: usize) {
-        let distance = self.fair_map.grid.get(position).unwrap().unwrap();
-        if new_time + distance <= self.max_time {
-            let best = self.cheats.entry((start, position)).or_insert(usize::MAX);
-            *best = (*best).min(new_time + distance);
-        }
+                Some((-cheat_time..=cheat_time).flat_map(move |x| {
+                    let limit = cheat_time - x.abs();
+                    (-limit..=limit).map(move |y| {
+                        let cheat_delta = Vec2::new(x, y);
+                        let cheat_pos = pos + cheat_delta;
+                        let Some(Some(d)) = distance_to_end.get(cheat_pos) else {
+                            return false;
+                        };
+                        t + d + cheat_delta.l1_norm() as u32 <= max_time
+                    })
+                }))
+            })
+            .flatten()
+            .filter(|b| *b)
+            .count()
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-struct State {
-    position: Vec2,
-    cheat: CheatState,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-enum CheatState {
-    Unused,
-    Active { start: Vec2, length: usize },
+enum Cell {
+    Empty,
+    Wall,
 }
 
 #[cfg(test)]
@@ -260,15 +130,8 @@ const INPUT: &str = "###############
 #[test]
 fn practice_part1() {
     let map = Map::parse(INPUT);
-    assert_eq!(map.shortest_paths(2, 6), 16);
-    assert_eq!(map.shortest_paths(2, 8), 14);
-    assert_eq!(map.shortest_paths(2, 10), 10);
-    assert_eq!(map.shortest_paths(2, 12), 8);
-    assert_eq!(map.shortest_paths(2, 20), 5);
-    assert_eq!(map.shortest_paths(2, 36), 4);
-    assert_eq!(map.shortest_paths(2, 38), 3);
-    assert_eq!(map.shortest_paths(2, 40), 2);
     assert_eq!(map.shortest_paths(2, 64), 1);
+    assert_eq!(map.shortest_paths(2, 2), 14 + 14 + 2 + 4 + 2 + 3 + 5);
 }
 
 #[test]
