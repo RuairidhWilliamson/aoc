@@ -44,6 +44,7 @@ version = "0.0.0"
 dependencies = [
  "aoc_helper",
  "criterion",
+ "kdam",
  "regex",
 ]
 
@@ -799,6 +800,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "kdam"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7ed2186610f797a95b55e61c420a81d3b9079ac9776d382f41cf35ce0643a90a"
+dependencies = [
+ "terminal_size",
+ "windows-sys 0.59.0",
+]
+
+[[package]]
 name = "libc"
 version = "0.2.167"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1418,6 +1429,16 @@ dependencies = [
  "cfg-if",
  "fastrand",
  "once_cell",
+ "rustix",
+ "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "terminal_size"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5352447f921fda68cf61b4101566c0bdb5104eff6804d0678e5227580ab6a4e9"
+dependencies = [
  "rustix",
  "windows-sys 0.59.0",
 ]

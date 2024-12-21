@@ -14,6 +14,7 @@ edition = "2021"
 
 [dependencies]
 aoc_helper.path = "aoc_helper"
+kdam = "0.6.2"
 regex = "1.11.1"
 
 [dev-dependencies]
