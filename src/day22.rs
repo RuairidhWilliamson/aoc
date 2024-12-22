@@ -5,7 +5,9 @@ pub fn solve_part1(input: &str) -> usize {
 pub fn solve_part2(input: &str) -> u32 {
     let mut seqs = SequenceMap::new(0);
     let mut already_sold = AlreadySoldPass::new();
-    parse_initials(input).for_each(|s| seq_map(s, 2001, &mut seqs, &mut already_sold));
+    for s in parse_initials(input) {
+        seq_map::<2001>(s, &mut seqs, &mut already_sold)
+    }
     *seqs.d.iter().max().unwrap()
 }
 
@@ -28,8 +30,8 @@ fn calc_n(initial: usize, n: usize) -> usize {
     s
 }
 
-fn prices(mut s: usize, n: usize) -> impl Iterator<Item = i8> {
-    (0..n).map(move |_| {
+fn prices<const N: usize>(mut s: usize) -> impl Iterator<Item = i8> {
+    (0..N).map(move |_| {
         let price = (s % 10) as i8;
         s = calc_next(s);
         price
@@ -74,13 +76,8 @@ impl<T: Copy> SequenceMap<T> {
         }
     }
 
-    #[allow(unused)]
-    fn get(&self, s: SequenceHash) -> &T {
-        self.d.get(s.0 as usize).unwrap()
-    }
-
     fn get_mut(&mut self, s: SequenceHash) -> &mut T {
-        self.d.get_mut(s.0 as usize).unwrap()
+        &mut self.d[s.0 as usize]
     }
 }
 
@@ -108,10 +105,14 @@ impl AlreadySoldPass {
     }
 }
 
-fn seq_map(s: usize, n: usize, seqs: &mut SequenceMap<u32>, already_sold: &mut AlreadySoldPass) {
+fn seq_map<const N: usize>(
+    s: usize,
+    seqs: &mut SequenceMap<u32>,
+    already_sold: &mut AlreadySoldPass,
+) {
     already_sold.index += 1;
 
-    let mut prices = prices(s, n);
+    let mut prices = prices::<N>(s);
     let mut prevs: [i8; 4] = [
         prices.next().unwrap(),
         prices.next().unwrap(),
