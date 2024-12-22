@@ -101,7 +101,7 @@ fn seq_map(s: usize, n: usize, seqs: &mut SequenceMap<u32>, already_sold: &mut S
 
     let prices: Vec<i8> = prices_collect(s, n);
     for w in prices.windows(5) {
-        let sequence = SequenceHash::new([0, 1, 2, 3].map(|i| w[i + 1] - w[i]));
+        let sequence = SequenceHash::new([w[1] - w[0], w[2] - w[1], w[3] - w[2], w[4] - w[3]]);
         if already_sold.insert(sequence) {
             *seqs.get_mut(sequence) += w[4] as u32;
         }
