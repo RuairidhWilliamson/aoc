@@ -36,10 +36,6 @@ fn prices(mut s: usize, n: usize) -> impl Iterator<Item = i8> {
     })
 }
 
-fn prices_collect(s: usize, n: usize) -> Vec<i8> {
-    prices(s, n).collect()
-}
-
 type Sequence = [i8; 4];
 
 #[repr(transparent)]
@@ -115,12 +111,27 @@ impl AlreadySoldPass {
 fn seq_map(s: usize, n: usize, seqs: &mut SequenceMap<u32>, already_sold: &mut AlreadySoldPass) {
     already_sold.index += 1;
 
-    let prices: Vec<i8> = prices_collect(s, n);
-    for w in prices.windows(5) {
-        let sequence = SequenceHash::new([w[1] - w[0], w[2] - w[1], w[3] - w[2], w[4] - w[3]]);
+    let mut prices = prices(s, n);
+    let mut prevs: [i8; 4] = [
+        prices.next().unwrap(),
+        prices.next().unwrap(),
+        prices.next().unwrap(),
+        prices.next().unwrap(),
+    ];
+    for p in prices {
+        let sequence = SequenceHash::new([
+            prevs[1] - prevs[0],
+            prevs[2] - prevs[1],
+            prevs[3] - prevs[2],
+            p - prevs[3],
+        ]);
         if already_sold.insert(sequence) {
-            *seqs.get_mut(sequence) += w[4] as u32;
+            *seqs.get_mut(sequence) += p as u32;
         }
+        prevs[0] = prevs[1];
+        prevs[1] = prevs[2];
+        prevs[2] = prevs[3];
+        prevs[3] = p;
     }
 }
 
