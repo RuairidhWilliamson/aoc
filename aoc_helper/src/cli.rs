@@ -167,12 +167,17 @@ impl Selection {
     }
 
     fn run_part(&self, input: &str, part: usize, part_fun: &SolveFnMagic) {
+        use num_format::ToFormattedString as _;
+
         let start = Instant::now();
         let out = part_fun.run(input);
-        let elapsed = start.elapsed().as_millis();
+        let elapsed = start
+            .elapsed()
+            .as_micros()
+            .to_formatted_string(&num_format::Locale::en);
         let day = self.day.get();
         let out = out.blue();
-        println!("{day:02}:{part} => {out:>20}\t\t{elapsed:>7} ms");
+        println!("{day:02}:{part} => {out:>20}\t\t{elapsed:>7} μs");
     }
 }
 
