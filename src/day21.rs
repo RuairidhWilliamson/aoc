@@ -34,19 +34,15 @@ fn parse_numerical_code(l: &str) -> impl Iterator<Item = Numerical> + use<'_> {
 
 impl Keypads {
     fn search_shortest<const N: usize>(&self, code: Vec<Numerical>) -> usize {
+        let cost_map = CostMap::base().next_n(self, N);
         let mut total = 0;
         for i in 0..code.len() {
-            let c = *code.get(i).unwrap();
-            let prev = code
+            let to = *code.get(i).unwrap();
+            let from = code
                 .get(i.wrapping_sub(1))
                 .copied()
                 .unwrap_or(Numerical::Press);
-            let state = State::<N> {
-                numerical_robot: self.find_numerical_pos(prev),
-                directional_robots: [self.find_directional_pos(Directional::Press); N],
-            };
-            let length = self.search_shortest_single_digit(state, c);
-            total += length;
+            total += cost_map.shortest_numerical(self, from, to);
         }
         total
     }
@@ -283,6 +279,22 @@ enum Directional {
     Press,
 }
 
+impl Directional {
+    fn variants_as_array() -> [Self; 5] {
+        [Self::Up, Self::Down, Self::Left, Self::Right, Self::Press]
+    }
+
+    fn as_vec2(&self) -> Vec2 {
+        match self {
+            Directional::Up => Vec2::new(0, -1),
+            Directional::Down => Vec2::new(0, 1),
+            Directional::Left => Vec2::new(-1, 0),
+            Directional::Right => Vec2::new(1, 0),
+            Directional::Press => panic!(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum Numerical {
     Zero,
@@ -317,6 +329,103 @@ impl Numerical {
     }
 }
 
+#[derive(Debug)]
+struct CostMap(HashMap<(Directional, Directional), usize>);
+
+impl CostMap {
+    fn base() -> CostMap {
+        Self(
+            Directional::variants_as_array()
+                .into_iter()
+                .flat_map(|d1| Directional::variants_as_array().map(|d2| (d1, d2)))
+                .map(|d| (d, 1))
+                .collect(),
+        )
+    }
+
+    fn next(&self, keypads: &Keypads) -> CostMap {
+        Self(
+            Directional::variants_as_array()
+                .into_iter()
+                .flat_map(|d1| {
+                    Directional::variants_as_array().map(|d2| {
+                        let pair = (d1, d2);
+                        let cost = self.shortest(keypads, d1, d2);
+                        (pair, cost)
+                    })
+                })
+                .collect(),
+        )
+    }
+
+    fn next_n(&self, keypads: &Keypads, n: usize) -> CostMap {
+        let mut s = self.next(keypads);
+        for _ in 1..n {
+            s = s.next(keypads);
+        }
+        s
+    }
+
+    fn get(&self, current: Directional, d: Directional) -> usize {
+        *self.0.get(&(current, d)).unwrap()
+    }
+
+    fn get_chain(&self, ds: &[Directional]) -> usize {
+        let mut prev = &ds[0];
+        let mut total = 0;
+        for d in &ds[1..] {
+            total += self.get(*prev, *d);
+            prev = d;
+        }
+        total
+    }
+
+    fn shortest(&self, keypads: &Keypads, from: Directional, to: Directional) -> usize {
+        if from == to {
+            return self.get(Directional::Press, Directional::Press);
+        }
+        let from_pos = keypads.find_directional_pos(from);
+        let to_pos = keypads.find_directional_pos(to);
+        let del = to_pos - from_pos;
+        use Directional::*;
+
+        match (del.x, del.y) {
+            (0, 0) => self.get_chain(&[Press, Press]),
+            (1, 0) => self.get_chain(&[Press, Right, Press]),
+            (0, -1) => self.get_chain(&[Press, Up, Press]),
+            (-1, 0) => self.get_chain(&[Press, Left, Press]),
+            (0, 1) => self.get_chain(&[Press, Down, Press]),
+            (1, -1) if from == Left => self.get_chain(&[Press, Right, Up, Press]),
+            (1, -1) => self
+                .get_chain(&[Press, Right, Up, Press])
+                .min(self.get_chain(&[Press, Up, Right, Press])),
+            (1, 1) => self
+                .get_chain(&[Press, Right, Down, Press])
+                .min(self.get_chain(&[Press, Down, Right, Press])),
+            (-1, 1) if from == Up => self.get_chain(&[Press, Down, Left, Press]),
+            (-1, 1) => self
+                .get_chain(&[Press, Left, Down, Press])
+                .min(self.get_chain(&[Press, Down, Left, Press])),
+            (-1, -1) => self
+                .get_chain(&[Press, Left, Up, Press])
+                .min(self.get_chain(&[Press, Up, Left, Press])),
+            (2, 0) => self.get_chain(&[Press, Right, Right, Press]),
+            (-2, 0) => self.get_chain(&[Press, Left, Left, Press]),
+            (2, -1) => self
+                .get_chain(&[Press, Right, Right, Up, Press])
+                .min(self.get_chain(&[Press, Right, Up, Right, Press])),
+            (-2, 1) => self
+                .get_chain(&[Press, Left, Down, Left, Press])
+                .min(self.get_chain(&[Press, Down, Left, Left, Press])),
+            _ => unreachable!(),
+        }
+    }
+
+    fn shortest_numerical(&self, keypads: &Keypads, from: Numerical, to: Numerical) -> usize {
+        todo!()
+    }
+}
+
 #[cfg(test)]
 const INPUT: &str = "029A
 980A
@@ -331,6 +440,15 @@ fn press_example() {
         68
     );
 }
+
+// #[test]
+// fn cost_map_test() {
+//     let keypads = Keypads::new();
+//     let base = CostMap::base();
+//     let next = base.next(&keypads);
+//     dbg!(&next);
+//     panic!();
+// }
 
 #[test]
 fn practice_part1() {
