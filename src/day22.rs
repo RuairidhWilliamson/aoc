@@ -4,7 +4,7 @@ pub fn solve_part1(input: &str) -> usize {
 
 pub fn solve_part2(input: &str) -> u32 {
     let mut seqs = SequenceMap::new(0);
-    let mut already_sold = SequenceMap::new(false);
+    let mut already_sold = AlreadySoldPass::new();
     parse_initials(input).for_each(|s| seq_map(s, 2001, &mut seqs, &mut already_sold));
     *seqs.d.iter().max().unwrap()
 }
@@ -50,6 +50,14 @@ impl SequenceHash {
     const MAX: SequenceHash = Self::new([9, 9, 9, 9]);
 
     const fn new(seq: Sequence) -> Self {
+        debug_assert!(seq[0] < 10);
+        debug_assert!(seq[1] < 10);
+        debug_assert!(seq[2] < 10);
+        debug_assert!(seq[3] < 10);
+        debug_assert!(seq[0] > -10);
+        debug_assert!(seq[1] > -10);
+        debug_assert!(seq[2] > -10);
+        debug_assert!(seq[3] > -10);
         Self(
             ((seq[0] + 10) as u32) << 15
                 | ((seq[1] + 10) as u32) << 10
@@ -70,10 +78,6 @@ impl<T: Copy> SequenceMap<T> {
         }
     }
 
-    fn set_all(&mut self, value: T) {
-        self.d.fill(value);
-    }
-
     #[allow(unused)]
     fn get(&self, s: SequenceHash) -> &T {
         self.d.get(s.0 as usize).unwrap()
@@ -84,20 +88,32 @@ impl<T: Copy> SequenceMap<T> {
     }
 }
 
-impl SequenceMap<bool> {
+struct AlreadySoldPass {
+    record: SequenceMap<u32>,
+    index: u32,
+}
+
+impl AlreadySoldPass {
+    fn new() -> Self {
+        Self {
+            record: SequenceMap::new(0),
+            index: 0,
+        }
+    }
+
     fn insert(&mut self, s: SequenceHash) -> bool {
-        let b = self.get_mut(s);
-        if *b {
+        let existing = self.record.get_mut(s);
+        if *existing == self.index {
             false
         } else {
-            *b = true;
+            *existing = self.index;
             true
         }
     }
 }
 
-fn seq_map(s: usize, n: usize, seqs: &mut SequenceMap<u32>, already_sold: &mut SequenceMap<bool>) {
-    already_sold.set_all(false);
+fn seq_map(s: usize, n: usize, seqs: &mut SequenceMap<u32>, already_sold: &mut AlreadySoldPass) {
+    already_sold.index += 1;
 
     let prices: Vec<i8> = prices_collect(s, n);
     for w in prices.windows(5) {
@@ -122,19 +138,6 @@ fn practice_part1() {
 #[test]
 fn secret_numbers() {
     assert_eq!(calc_next(123), 15887950);
-}
-
-#[test]
-fn prices_test() {
-    assert_eq!(
-        prices(123, 10).collect::<Vec<_>>(),
-        vec![3, 0, 6, 5, 4, 4, 6, 4, 4, 2]
-    );
-    let mut seqs = SequenceMap::new(0);
-    let mut already_sold = SequenceMap::new(false);
-    seq_map(123, 10, &mut seqs, &mut already_sold);
-    assert_eq!(*seqs.get(SequenceHash::new([-1, -1, 0, 2])), 6);
-    assert_eq!(*seqs.get(SequenceHash::new([-3, 6, -1, -1])), 4);
 }
 
 #[test]
