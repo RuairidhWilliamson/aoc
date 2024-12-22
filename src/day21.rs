@@ -3,87 +3,47 @@ use std::collections::{BinaryHeap, HashMap};
 use aoc_helper::grid::{Grid, Vec2};
 
 pub fn solve_part1(input: &str) -> usize {
-    let keypads = Keypads::new();
-    input
-        .lines()
-        .map(|l| {
-            let num: usize = l[..l.len() - 1].parse().unwrap();
-            let length = keypads.search_shortest::<2>(parse_numerical_code(l).collect());
-            println!("{length}");
-            num * length
-        })
-        .sum()
+    solve_puzzle(input, 2)
 }
 
 pub fn solve_part2(input: &str) -> usize {
-    let keypads = Keypads::new();
-    input
-        .lines()
-        .map(|l| {
-            let num: usize = l[..l.len() - 1].parse().unwrap();
-            let length = keypads.search_shortest::<25>(parse_numerical_code(l).collect());
-            println!("{length}");
-            num * length
-        })
-        .sum()
+    solve_puzzle(input, 25)
 }
 
 fn parse_numerical_code(l: &str) -> impl Iterator<Item = Numerical> + use<'_> {
     l.chars().map(Numerical::parse)
 }
 
-impl Keypads {
-    fn search_shortest<const N: usize>(&self, code: Vec<Numerical>) -> usize {
-        let cost_map = CostMap::base().next_n(self, N);
-        let mut total = 0;
-        for i in 0..code.len() {
-            let to = *code.get(i).unwrap();
-            let from = code
-                .get(i.wrapping_sub(1))
-                .copied()
-                .unwrap_or(Numerical::Press);
-            total += cost_map.shortest_numerical(self, from, to);
-        }
-        total
-    }
-
-    fn search_shortest_single_digit<const N: usize>(
-        &self,
-        init: State<N>,
-        expected_numerical: Numerical,
-    ) -> usize {
-        let mut open = BinaryHeap::new();
-        open.push(StateWithF { state: init, f: 0 });
-        let mut g_map = HashMap::new();
-        g_map.insert(init, 0);
-        while let Some(StateWithF { state: q, f: _ }) = open.pop() {
-            let g = g_map.get(&q).unwrap();
-            let new_g = g + 1;
-            for d in [
-                Directional::Up,
-                Directional::Left,
-                Directional::Down,
-                Directional::Right,
-                Directional::Press,
-            ] {
-                if let Some(apply) = q.apply(self, d, expected_numerical) {
-                    let new_q = match apply {
-                        Apply::NewState(new_q) => new_q,
-                        Apply::PressNumerical => {
-                            return new_g;
-                        }
-                    };
-                    let old_g = g_map.entry(new_q).or_insert(usize::MAX);
-                    if *old_g > new_g {
-                        *old_g = new_g;
-                        let h = new_q.heurisitc(self, expected_numerical);
-                        let f = new_g + h;
-                        open.push(StateWithF { state: new_q, f });
-                    }
-                }
+fn solve_puzzle(input: &str, n: usize) -> usize {
+    let keypads = Keypads::new();
+    let cost_map = CostMap::base().next_n(&keypads, n);
+    input
+        .lines()
+        .map(|l| {
+            let num: usize = l[..l.len() - 1].parse().unwrap();
+            let code: Vec<Numerical> = parse_numerical_code(l).collect();
+            let mut total = 0;
+            let mut from = Numerical::Press;
+            for to in code {
+                total += cost_map.shortest_numerical(&keypads, from, to);
+                from = to;
             }
+            num * total
+        })
+        .sum()
+}
+
+struct Keypads {
+    numerical: Grid<Option<Numerical>>,
+    directional: Grid<Option<Directional>>,
+}
+
+impl Keypads {
+    fn new() -> Self {
+        Self {
+            numerical: numerical_keypad(),
+            directional: directional_keypad(),
         }
-        panic!("did not find solution")
     }
 
     fn find_numerical_pos(&self, numerical: Numerical) -> Vec2 {
@@ -98,137 +58,6 @@ impl Keypads {
             .coords_iter()
             .find(|c| self.directional.get(*c).unwrap() == &Some(directional))
             .unwrap()
-    }
-}
-
-struct StateWithF<const N: usize> {
-    state: State<N>,
-    f: usize,
-}
-
-impl<const N: usize> PartialEq for StateWithF<N> {
-    fn eq(&self, other: &Self) -> bool {
-        self.state == other.state && self.f == other.f
-    }
-}
-
-impl<const N: usize> Eq for StateWithF<N> {}
-
-impl<const N: usize> PartialOrd for StateWithF<N> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl<const N: usize> Ord for StateWithF<N> {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.f
-            .cmp(&other.f)
-            .reverse()
-            .then(self.state.cmp(&other.state))
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-struct State<const N: usize> {
-    numerical_robot: Vec2,
-    directional_robots: [Vec2; N],
-}
-
-impl<const N: usize> State<N> {
-    fn heurisitc(&self, keypads: &Keypads, expected_numerical: Numerical) -> usize {
-        let target = keypads
-            .numerical
-            .coords_iter()
-            .find(|c| *keypads.numerical.get(*c).unwrap() == Some(expected_numerical))
-            .unwrap();
-        1000 - (self.numerical_robot - target).l1_norm()
-    }
-
-    fn apply(
-        &self,
-        keypads: &Keypads,
-        mut d: Directional,
-        expected_numerical: Numerical,
-    ) -> Option<Apply<N>> {
-        let mut q: Self = *self;
-        for r in &mut q.directional_robots {
-            match d {
-                Directional::Up => {
-                    *r += Vec2::new(0, -1);
-                    keypads.directional.get(*r)?.as_ref()?;
-                    return Some(Apply::NewState(q));
-                }
-                Directional::Down => {
-                    *r += Vec2::new(0, 1);
-                    keypads.directional.get(*r)?.as_ref()?;
-                    return Some(Apply::NewState(q));
-                }
-                Directional::Left => {
-                    *r += Vec2::new(-1, 0);
-                    keypads.directional.get(*r)?.as_ref()?;
-                    return Some(Apply::NewState(q));
-                }
-                Directional::Right => {
-                    *r += Vec2::new(1, 0);
-                    keypads.directional.get(*r)?.as_ref()?;
-                    return Some(Apply::NewState(q));
-                }
-                Directional::Press => {
-                    d = *keypads.directional.get(*r)?.as_ref()?;
-                }
-            }
-        }
-        let r = &mut q.numerical_robot;
-        match d {
-            Directional::Up => {
-                *r += Vec2::new(0, -1);
-                keypads.numerical.get(*r)?.as_ref()?;
-                Some(Apply::NewState(q))
-            }
-            Directional::Down => {
-                *r += Vec2::new(0, 1);
-                keypads.numerical.get(*r)?.as_ref()?;
-                Some(Apply::NewState(q))
-            }
-            Directional::Left => {
-                *r += Vec2::new(-1, 0);
-                keypads.numerical.get(*r)?.as_ref()?;
-                Some(Apply::NewState(q))
-            }
-            Directional::Right => {
-                *r += Vec2::new(1, 0);
-                keypads.numerical.get(*r)?.as_ref()?;
-                Some(Apply::NewState(q))
-            }
-            Directional::Press => {
-                let n = *keypads.numerical.get(*r)?.as_ref()?;
-                if n != expected_numerical {
-                    None
-                } else {
-                    Some(Apply::PressNumerical)
-                }
-            }
-        }
-    }
-}
-
-enum Apply<const N: usize> {
-    NewState(State<N>),
-    PressNumerical,
-}
-
-struct Keypads {
-    numerical: Grid<Option<Numerical>>,
-    directional: Grid<Option<Directional>>,
-}
-
-impl Keypads {
-    fn new() -> Self {
-        Self {
-            numerical: numerical_keypad(),
-            directional: directional_keypad(),
-        }
     }
 }
 
@@ -270,7 +99,7 @@ fn numerical_keypad() -> Grid<Option<Numerical>> {
     )
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum Directional {
     Up,
     Down,
@@ -370,14 +199,14 @@ impl CostMap {
         *self.0.get(&(current, d)).unwrap()
     }
 
-    fn get_chain(&self, ds: &[Directional]) -> usize {
-        let mut prev = &ds[0];
+    fn get_chain_p_p(&self, ds: &[Directional]) -> usize {
+        let mut prev = &Directional::Press;
         let mut total = 0;
-        for d in &ds[1..] {
+        for d in ds {
             total += self.get(*prev, *d);
             prev = d;
         }
-        total
+        total + self.get(*prev, Directional::Press)
     }
 
     fn shortest(&self, keypads: &Keypads, from: Directional, to: Directional) -> usize {
@@ -390,39 +219,109 @@ impl CostMap {
         use Directional::*;
 
         match (del.x, del.y) {
-            (0, 0) => self.get_chain(&[Press, Press]),
-            (1, 0) => self.get_chain(&[Press, Right, Press]),
-            (0, -1) => self.get_chain(&[Press, Up, Press]),
-            (-1, 0) => self.get_chain(&[Press, Left, Press]),
-            (0, 1) => self.get_chain(&[Press, Down, Press]),
-            (1, -1) if from == Left => self.get_chain(&[Press, Right, Up, Press]),
+            (0, 0) => self.get_chain_p_p(&[]),
+            (1, 0) => self.get_chain_p_p(&[Right]),
+            (0, -1) => self.get_chain_p_p(&[Up]),
+            (-1, 0) => self.get_chain_p_p(&[Left]),
+            (0, 1) => self.get_chain_p_p(&[Down]),
+            (1, -1) if from == Left => self.get_chain_p_p(&[Right, Up]),
             (1, -1) => self
-                .get_chain(&[Press, Right, Up, Press])
-                .min(self.get_chain(&[Press, Up, Right, Press])),
+                .get_chain_p_p(&[Right, Up])
+                .min(self.get_chain_p_p(&[Up, Right])),
             (1, 1) => self
-                .get_chain(&[Press, Right, Down, Press])
-                .min(self.get_chain(&[Press, Down, Right, Press])),
-            (-1, 1) if from == Up => self.get_chain(&[Press, Down, Left, Press]),
+                .get_chain_p_p(&[Right, Down])
+                .min(self.get_chain_p_p(&[Down, Right])),
+            (-1, 1) if from == Up => self.get_chain_p_p(&[Down, Left]),
             (-1, 1) => self
-                .get_chain(&[Press, Left, Down, Press])
-                .min(self.get_chain(&[Press, Down, Left, Press])),
+                .get_chain_p_p(&[Left, Down])
+                .min(self.get_chain_p_p(&[Down, Left])),
             (-1, -1) => self
-                .get_chain(&[Press, Left, Up, Press])
-                .min(self.get_chain(&[Press, Up, Left, Press])),
-            (2, 0) => self.get_chain(&[Press, Right, Right, Press]),
-            (-2, 0) => self.get_chain(&[Press, Left, Left, Press]),
+                .get_chain_p_p(&[Left, Up])
+                .min(self.get_chain_p_p(&[Up, Left])),
+            (2, 0) => self.get_chain_p_p(&[Right, Right]),
+            (-2, 0) => self.get_chain_p_p(&[Left, Left]),
             (2, -1) => self
-                .get_chain(&[Press, Right, Right, Up, Press])
-                .min(self.get_chain(&[Press, Right, Up, Right, Press])),
+                .get_chain_p_p(&[Right, Right, Up])
+                .min(self.get_chain_p_p(&[Right, Up, Right])),
             (-2, 1) => self
-                .get_chain(&[Press, Left, Down, Left, Press])
-                .min(self.get_chain(&[Press, Down, Left, Left, Press])),
+                .get_chain_p_p(&[Left, Down, Left])
+                .min(self.get_chain_p_p(&[Down, Left, Left])),
             _ => unreachable!(),
         }
     }
 
     fn shortest_numerical(&self, keypads: &Keypads, from: Numerical, to: Numerical) -> usize {
-        todo!()
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        struct State {
+            pos: Vec2,
+            prev: Directional,
+        }
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+        struct StateWithF(usize, State);
+
+        impl PartialOrd for StateWithF {
+            fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+                Some(self.cmp(other))
+            }
+        }
+
+        impl Ord for StateWithF {
+            fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+                self.0.cmp(&other.0).reverse().then(self.1.cmp(&other.1))
+            }
+        }
+
+        if from == to {
+            return self.get(Directional::Press, Directional::Press);
+        }
+
+        let from = keypads.find_numerical_pos(from);
+        let to = keypads.find_numerical_pos(to);
+        let mut open = BinaryHeap::new();
+        let init = State {
+            pos: from,
+            prev: Directional::Press,
+        };
+        open.push(StateWithF(0, init));
+        let mut g_map = HashMap::new();
+        g_map.insert(init, 0);
+        let mut final_cost = usize::MAX;
+        while let Some(StateWithF(_, q)) = open.pop() {
+            let Some(g) = g_map.get(&q).copied() else {
+                unreachable!();
+            };
+            for d in [
+                Directional::Up,
+                Directional::Down,
+                Directional::Left,
+                Directional::Right,
+            ] {
+                let new_pos = q.pos + d.as_vec2();
+                let Some(Some(_)) = keypads.numerical.get(new_pos) else {
+                    continue;
+                };
+                let new_g = g + self.get(q.prev, d);
+                let new_q = State {
+                    pos: new_pos,
+                    prev: d,
+                };
+                if new_q.pos == to {
+                    let total_cost = new_g + self.get(d, Directional::Press);
+                    if final_cost > total_cost {
+                        final_cost = total_cost;
+                    }
+                }
+                let old_g = g_map.entry(new_q).or_insert(usize::MAX);
+                if *old_g > new_g {
+                    *old_g = new_g;
+                    let h = 0;
+                    let f = new_g + h;
+                    open.push(StateWithF(f, new_q));
+                }
+            }
+        }
+        final_cost
     }
 }
 
@@ -434,21 +333,18 @@ const INPUT: &str = "029A
 379A";
 
 #[test]
-fn press_example() {
+fn cost_map_numerical() {
+    let keypads = Keypads::new();
+    let base = CostMap::base();
     assert_eq!(
-        Keypads::new().search_shortest::<2>(parse_numerical_code("029A").collect()),
-        68
+        base.shortest_numerical(&keypads, Numerical::Press, Numerical::Press),
+        1
+    );
+    assert_eq!(
+        base.shortest_numerical(&keypads, Numerical::Press, Numerical::One),
+        4
     );
 }
-
-// #[test]
-// fn cost_map_test() {
-//     let keypads = Keypads::new();
-//     let base = CostMap::base();
-//     let next = base.next(&keypads);
-//     dbg!(&next);
-//     panic!();
-// }
 
 #[test]
 fn practice_part1() {
