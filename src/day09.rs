@@ -311,17 +311,17 @@ impl Disk2 {
         }
     }
 
-    fn find_free_blocks(&mut self, size: usize, end_index: usize) -> Option<usize> {
+    fn find_free_blocks(&self, size: usize, end_index: usize) -> Option<usize> {
         let mut i = 0;
         let mut free_acc = 0;
         while i < end_index {
             if self.blocks[i].is_free() {
                 free_acc += 1;
-            } else if free_acc > 0 {
+                if free_acc >= size {
+                    return Some(i);
+                }
+            } else {
                 free_acc = 0;
-            }
-            if free_acc >= size {
-                return Some(i);
             }
             i += 1;
         }
@@ -354,11 +354,29 @@ impl std::fmt::Display for Disk2 {
 const INPUT: &str = "2333133121414131402";
 
 #[test]
-fn practice_part1() {
-    assert_eq!(solve_part1(INPUT), 1928);
+fn practice_part1_disk1() {
+    let mut disk: Disk = INPUT.trim().parse().unwrap();
+    disk.compact1();
+    assert_eq!(disk.checksum(), 1928);
 }
 
 #[test]
-fn practice_part2() {
-    assert_eq!(solve_part2(INPUT), 2858);
+fn practice_part2_disk1() {
+    let mut disk: Disk = INPUT.trim().parse().unwrap();
+    disk.compact2();
+    assert_eq!(disk.checksum(), 2858);
+}
+
+#[test]
+fn practice_part1_disk2() {
+    let mut disk: Disk2 = INPUT.trim().parse().unwrap();
+    disk.compact1();
+    assert_eq!(disk.checksum(), 1928);
+}
+
+#[test]
+fn practice_part2_disk2() {
+    let mut disk: Disk2 = INPUT.trim().parse().unwrap();
+    disk.compact2();
+    assert_eq!(disk.checksum(), 2858);
 }
