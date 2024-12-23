@@ -177,7 +177,7 @@ impl Selection {
             .to_formatted_string(&num_format::Locale::en);
         let day = self.day.get();
         let out = out.blue();
-        println!("{day:02}:{part} => {out:>20}\t\t{elapsed:>7} μs");
+        println!("{day:02}:{part} => {out:>40}\t{elapsed:>7} μs");
     }
 }
 

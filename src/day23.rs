@@ -1,14 +1,15 @@
+use core::str;
 use std::collections::{HashMap, HashSet};
 
 pub fn solve_part1(input: &str) -> usize {
     let mut three_sets = HashSet::new();
-    let mut edges: HashMap<&str, Vec<&str>> = HashMap::new();
+    let mut edges: HashMap<Node, Vec<Node>> = HashMap::new();
     for (v1, v2) in parse_connections(input) {
-        if let Some(cons1) = edges.get(v1) {
-            if let Some(cons2) = edges.get(v2) {
+        if let Some(cons1) = edges.get(&v1) {
+            if let Some(cons2) = edges.get(&v2) {
                 for c in cons1 {
-                    if c != &v1 && c != &v2 && cons2.contains(c) {
-                        let mut set = [v1, v2, c];
+                    if cons2.contains(c) && (v1[0] == b't' || v2[0] == b't' || c[0] == b't') {
+                        let mut set = [v1, v2, *c];
                         set.sort_unstable();
                         three_sets.insert(set);
                     }
@@ -18,23 +19,20 @@ pub fn solve_part1(input: &str) -> usize {
         edges.entry(v1).or_default().push(v2);
         edges.entry(v2).or_default().push(v1);
     }
-    three_sets
-        .iter()
-        .filter(|[a, b, c]| a.starts_with('t') || b.starts_with('t') || c.starts_with('t'))
-        .count()
+    three_sets.len()
 }
 
 pub fn solve_part2(input: &str) -> String {
-    let mut connected: HashMap<&str, Vec<&str>> = HashMap::new();
+    let mut connected: HashMap<Node, Vec<Node>> = HashMap::new();
     for (v1, v2) in parse_connections(input) {
         connected.entry(v1).or_default().push(v2);
         connected.entry(v2).or_default().push(v1);
     }
-    let mut sets = Vec::<Vec<&str>>::new();
+    let mut sets = Vec::<Vec<Node>>::new();
     for (v, neighbours) in &connected {
         let mut set = vec![*v];
         'outer: for i in 0..neighbours.len() {
-            let con = connected.get(neighbours[i]).unwrap();
+            let con = connected.get(&neighbours[i]).unwrap();
             for n in neighbours.iter().take(i) {
                 if !con.contains(n) {
                     continue 'outer;
@@ -44,19 +42,31 @@ pub fn solve_part2(input: &str) -> String {
         }
         sets.push(set);
     }
-    let mut s: Vec<&str> = sets
+    let mut set = sets
         .into_iter()
         .max_by_key(|s| s.len())
         .unwrap()
-        .into_iter()
-        .collect();
-    s.sort_unstable();
-    s.join(",")
+        .into_iter();
+    let mut out = String::with_capacity((set.len() * 3) - 1);
+    out.push_str(std::str::from_utf8(&set.next().unwrap()).unwrap());
+    for s in set {
+        out.push(',');
+        out.push_str(std::str::from_utf8(&s).unwrap());
+    }
+    out
 }
 
-fn parse_connections(input: &str) -> impl Iterator<Item = (&str, &str)> {
-    input.lines().map(|l| l.split_once('-').unwrap())
+fn parse_connections(input: &str) -> impl Iterator<Item = (Node, Node)> + use<'_> {
+    input.lines().map(|l| {
+        let (a, b) = l.split_once('-').unwrap();
+        (
+            a.as_bytes().try_into().unwrap(),
+            b.as_bytes().try_into().unwrap(),
+        )
+    })
 }
+
+type Node = [u8; 2];
 
 #[cfg(test)]
 const INPUT: &str = "kh-tc
