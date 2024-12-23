@@ -21,4 +21,5 @@ aoc_helper::days! {
     day20,
     day21,
     day22,
+    day23,
 }
