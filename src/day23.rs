@@ -42,11 +42,9 @@ pub fn solve_part2(input: &str) -> String {
         }
         sets.push(set);
     }
-    let mut set = sets
-        .into_iter()
-        .max_by_key(|s| s.len())
-        .unwrap()
-        .into_iter();
+    let mut set = sets.into_iter().max_by_key(|s| s.len()).unwrap();
+    set.sort_unstable();
+    let mut set = set.into_iter();
     let mut out = String::with_capacity((set.len() * 3) - 1);
     out.push_str(std::str::from_utf8(&set.next().unwrap()).unwrap());
     for s in set {

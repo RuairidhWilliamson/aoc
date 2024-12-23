@@ -13,7 +13,7 @@ pub fn solve_part2(input: &str) -> usize {
 }
 
 #[derive(Debug)]
-struct Disk {
+pub struct Disk {
     blocks: Vec<Block>,
 }
 
@@ -29,7 +29,11 @@ impl FromStr for Disk {
                 assert!(size.is_ascii_digit());
                 let size: u8 = size as u8 - b'0';
                 let b = Block {
-                    file_id: if free { None } else { Some(file_id) },
+                    file_id: if free {
+                        MaybeFileId::none()
+                    } else {
+                        MaybeFileId(file_id)
+                    },
                     size,
                 };
                 if !free {
@@ -45,7 +49,7 @@ impl FromStr for Disk {
 
 impl Disk {
     #[allow(dead_code)]
-    fn compact1(&mut self) {
+    pub fn compact1(&mut self) {
         loop {
             self.remove_trailing_free_blocks();
             let Some((free_block_index, _)) =
@@ -74,25 +78,20 @@ impl Disk {
         }
     }
 
-    fn compact2(&mut self) {
-        let mut largest_attempted_file_id = usize::MAX;
+    pub fn compact2(&mut self) {
+        let mut largest_attempted_file_id = u16::MAX;
         loop {
             self.remove_trailing_free_blocks();
             let Some((file_block_index, file_block)) = self
                 .blocks
                 .iter()
                 .enumerate()
-                .rfind(|(_, b)| b.file_id.is_some_and(|id| id < largest_attempted_file_id))
+                .rfind(|(_, b)| b.file_id.0 < largest_attempted_file_id)
             else {
                 return;
             };
-            largest_attempted_file_id = file_block.file_id.unwrap();
-            let Some((free_block_index, _)) = self
-                .blocks
-                .iter()
-                .enumerate()
-                .take(file_block_index)
-                .find(|(_, b)| b.is_free() && b.size >= file_block.size)
+            largest_attempted_file_id = file_block.file_id.0;
+            let Some(free_block_index) = self.find_free_space(file_block_index, file_block.size)
             else {
                 continue;
             };
@@ -100,18 +99,28 @@ impl Disk {
                 file_id: file_block.file_id,
                 size: file_block.size,
             };
-            self.blocks[file_block_index].file_id = None;
+            self.blocks[file_block_index].file_id = MaybeFileId::none();
             let free_block = &mut self.blocks[free_block_index];
             free_block.file_id = file_block.file_id;
             if free_block.size != file_block.size {
                 let new_free_block = Block {
-                    file_id: None,
+                    file_id: MaybeFileId::none(),
                     size: free_block.size - file_block.size,
                 };
                 free_block.size = file_block.size;
                 self.blocks.insert(free_block_index + 1, new_free_block);
             }
         }
+    }
+
+    fn find_free_space(&self, limit: usize, size: u8) -> Option<usize> {
+        for i in 0..limit {
+            let b = &self.blocks[i];
+            if b.is_free() && b.size >= size {
+                return Some(i);
+            }
+        }
+        None
     }
 
     fn remove_trailing_free_blocks(&mut self) {
@@ -123,7 +132,7 @@ impl Disk {
         }
     }
 
-    fn checksum(&self) -> usize {
+    pub fn checksum(&self) -> usize {
         let mut position = 0;
         self.blocks
             .iter()
@@ -140,7 +149,7 @@ impl std::fmt::Display for Disk {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for b in &self.blocks {
             for _ in 0..b.size {
-                if let Some(id) = b.file_id {
+                if let Some(id) = b.file_id.id() {
                     f.write_fmt(format_args!("{id}"))?;
                 } else {
                     f.write_str(".")?;
@@ -155,35 +164,62 @@ fn triangle(n: usize) -> usize {
     (n + 1) * n / 2
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 struct Block {
-    file_id: Option<usize>,
+    file_id: MaybeFileId,
     size: u8,
 }
 
 impl Block {
     fn is_free(&self) -> bool {
-        self.file_id.is_none()
+        self.file_id.is_free()
     }
 
     fn is_file(&self) -> bool {
-        self.file_id.is_some()
+        self.file_id.is_file()
     }
 
     fn checksum(&self, position: usize) -> usize {
-        let Some(file_id) = self.file_id else {
+        let Some(file_id) = self.file_id.id() else {
             return 0;
         };
         if let Some(pos) = NonZeroUsize::new(position) {
-            file_id * (triangle(self.size as usize + pos.get() - 1) - triangle(pos.get() - 1))
+            file_id as usize
+                * (triangle(self.size as usize + pos.get() - 1) - triangle(pos.get() - 1))
         } else {
-            file_id * triangle(self.size as usize - 1)
+            file_id as usize * triangle(self.size as usize - 1)
         }
     }
 }
 
-struct Disk2 {
-    blocks: Vec<Option<usize>>,
+#[repr(transparent)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct MaybeFileId(u16);
+
+impl MaybeFileId {
+    const fn none() -> Self {
+        Self(u16::MAX)
+    }
+
+    fn is_free(&self) -> bool {
+        self.0 == u16::MAX
+    }
+
+    fn is_file(&self) -> bool {
+        self.0 != u16::MAX
+    }
+
+    fn id(&self) -> Option<u16> {
+        if self.0 == u16::MAX {
+            None
+        } else {
+            Some(self.0)
+        }
+    }
+}
+
+pub struct Disk2 {
+    blocks: Vec<MaybeFileId>,
 }
 
 impl FromStr for Disk2 {
@@ -192,12 +228,16 @@ impl FromStr for Disk2 {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut free = false;
         let mut file_id = 0;
-        let blocks: Vec<Option<usize>> = s
+        let blocks = s
             .chars()
             .flat_map(|size| {
                 assert!(size.is_ascii_digit());
                 let size: u8 = size as u8 - b'0';
-                let b = if free { None } else { Some(file_id) };
+                let b = if free {
+                    MaybeFileId::none()
+                } else {
+                    MaybeFileId(file_id)
+                };
                 if !free {
                     file_id += 1;
                 }
@@ -210,7 +250,7 @@ impl FromStr for Disk2 {
 }
 
 impl Disk2 {
-    fn compact1(&mut self) {
+    pub fn compact1(&mut self) {
         let mut start = 0;
         let mut end = usize::MAX;
         loop {
@@ -219,7 +259,7 @@ impl Disk2 {
                 .iter()
                 .enumerate()
                 .skip(start)
-                .find(|(_, id)| id.is_none())
+                .find(|(_, id)| id.is_free())
             else {
                 return;
             };
@@ -229,7 +269,7 @@ impl Disk2 {
                 .enumerate()
                 .take(end)
                 .skip(free_block_index)
-                .rfind(|(_, id)| id.is_some())
+                .rfind(|(_, id)| id.is_file())
             else {
                 return;
             };
@@ -240,7 +280,7 @@ impl Disk2 {
     }
 
     #[allow(dead_code)]
-    fn compact2(&mut self) {
+    pub fn compact2(&mut self) {
         let mut end = usize::MAX;
         loop {
             let Some((file_block_index, file_block)) = self
@@ -248,7 +288,7 @@ impl Disk2 {
                 .iter()
                 .enumerate()
                 .take(end)
-                .rfind(|(_, id)| id.is_some())
+                .rfind(|(_, id)| id.is_file())
             else {
                 return;
             };
@@ -262,7 +302,7 @@ impl Disk2 {
                 + 1;
             end = file_block_index + 1 - size;
             debug_assert!((1..=9).contains(&size));
-            let Some(free_index) = self.find_free_blocks(size, 0, file_block_index) else {
+            let Some(free_index) = self.find_free_blocks(size, file_block_index) else {
                 continue;
             };
             for i in 0..size {
@@ -271,13 +311,13 @@ impl Disk2 {
         }
     }
 
-    fn find_free_blocks(&self, size: usize, start_index: usize, end_index: usize) -> Option<usize> {
-        let mut i = start_index;
+    fn find_free_blocks(&mut self, size: usize, end_index: usize) -> Option<usize> {
+        let mut i = 0;
         let mut free_acc = 0;
         while i < end_index {
-            if self.blocks[i].is_none() {
+            if self.blocks[i].is_free() {
                 free_acc += 1;
-            } else {
+            } else if free_acc > 0 {
                 free_acc = 0;
             }
             if free_acc >= size {
@@ -288,11 +328,11 @@ impl Disk2 {
         None
     }
 
-    fn checksum(&self) -> usize {
+    pub fn checksum(&self) -> usize {
         self.blocks
             .iter()
             .enumerate()
-            .map(|(pos, id)| pos * id.unwrap_or_default())
+            .map(|(pos, id)| pos * id.id().unwrap_or_default() as usize)
             .sum()
     }
 }
@@ -300,7 +340,7 @@ impl Disk2 {
 impl std::fmt::Display for Disk2 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for b in &self.blocks {
-            if let Some(b) = b {
+            if let Some(b) = b.id() {
                 f.write_fmt(format_args!("{b}"))?;
             } else {
                 f.write_str(".")?;
