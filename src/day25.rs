@@ -1,3 +1,4 @@
+#[expect(clippy::needless_range_loop)]
 pub fn solve_part1(input: &str) -> usize {
     let mut keys = Vec::new();
     let mut locks = Vec::new();
