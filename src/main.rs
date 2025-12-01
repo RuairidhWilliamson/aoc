@@ -1,0 +1,37 @@
+use std::{path::Path, time::Instant};
+
+mod day01;
+
+fn main() {
+    let day = std::env::var("DAY").ok().map(|d| d.parse::<u32>().unwrap());
+    let part = std::env::var("PART").ok().map(|p| p.parse::<u8>().unwrap());
+    let use_testdata = std::env::var("TESTDATA").is_ok_and(|v| {
+        v != "0" && !v.eq_ignore_ascii_case("false") && !v.eq_ignore_ascii_case("no")
+    });
+    let data_dir = if use_testdata {
+        Path::new("test_data")
+    } else {
+        Path::new("data")
+    };
+
+    if day.is_none_or(|d| d == 1) {
+        println!("Day 1");
+        let input = std::fs::read_to_string(data_dir.join("day01.txt")).unwrap();
+        if part.is_none_or(|p| p == 1) {
+            let timer = Instant::now();
+            println!(
+                " Part 1 = {}  Elapsed {:?}",
+                day01::part1(&input),
+                timer.elapsed()
+            );
+        }
+        if part.is_none_or(|p| p == 2) {
+            let timer = Instant::now();
+            println!(
+                " Part 2 = {}  Elapsed {:?}",
+                day01::part2(&input),
+                timer.elapsed()
+            );
+        }
+    }
+}
