@@ -1,6 +1,7 @@
 use std::{path::Path, time::Instant};
 
 mod day01;
+mod day02;
 
 fn main() {
     let day = std::env::var("DAY").ok().map(|d| d.parse::<u32>().unwrap());
@@ -30,6 +31,26 @@ fn main() {
             println!(
                 " Part 2 = {}  Elapsed {:?}",
                 day01::part2(&input),
+                timer.elapsed()
+            );
+        }
+    }
+    if day.is_none_or(|d| d == 2) {
+        println!("Day 2");
+        let input = std::fs::read_to_string(data_dir.join("day02.txt")).unwrap();
+        if part.is_none_or(|p| p == 1) {
+            let timer = Instant::now();
+            println!(
+                " Part 1 = {}  Elapsed {:?}",
+                day02::part1(&input),
+                timer.elapsed()
+            );
+        }
+        if part.is_none_or(|p| p == 2) {
+            let timer = Instant::now();
+            println!(
+                " Part 2 = {}  Elapsed {:?}",
+                day02::part2(&input),
                 timer.elapsed()
             );
         }
