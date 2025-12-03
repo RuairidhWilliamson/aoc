@@ -1,6 +1,6 @@
 pub fn part1(input: &str) -> u64 {
     fn is_invalid_id(id: u64) -> bool {
-        let x = 10u64.pow((id.ilog10() + 1) / 2);
+        let x = 10u64.pow(digits_of(id) / 2);
         id / x == id % x
     }
     let ranges = input.trim().split(',').map(|rng| {
@@ -13,12 +13,16 @@ pub fn part1(input: &str) -> u64 {
         .sum()
 }
 
+fn digits_of(n: u64) -> u32 {
+    n.ilog10() + 1
+}
+
 fn factors_of(n: u32) -> impl Iterator<Item = u32> {
     (2..=n).filter(move |x| n % x == 0)
 }
 
 fn is_invalid_id_part2(id: u64) -> bool {
-    let digits = id.ilog10() + 1;
+    let digits = digits_of(id);
     'outer: for len in factors_of(digits) {
         let denom = 10u64.pow(digits / len);
         let mut id = id;
@@ -34,6 +38,10 @@ fn is_invalid_id_part2(id: u64) -> bool {
     false
 }
 
+fn find_invalid_ids_part2(rng: std::ops::RangeInclusive<u64>) -> impl Iterator<Item = u64> {
+    rng.filter(|id| is_invalid_id_part2(*id))
+}
+
 pub fn part2(input: &str) -> u64 {
     let ranges = input.trim().split(',').map(|rng| {
         let (start, end) = rng.split_once('-').unwrap();
@@ -42,8 +50,7 @@ pub fn part2(input: &str) -> u64 {
 
     ranges
         .map(|(start, end)| {
-            (start..=end)
-                .filter(|id| is_invalid_id_part2(*id))
+            find_invalid_ids_part2(start..=end)
                 // .inspect(|id| eprintln!("{id}"))
                 .sum::<u64>()
         })
