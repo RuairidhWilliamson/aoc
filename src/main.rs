@@ -1,8 +1,9 @@
-use std::{path::Path, time::Instant};
-
 mod day01;
 mod day02;
 mod day03;
+mod day04;
+
+use std::{path::Path, time::Instant};
 
 fn main() {
     let day = std::env::var("DAY").ok().map(|d| d.parse::<u32>().unwrap());
@@ -72,6 +73,26 @@ fn main() {
             println!(
                 " Part 2 = {}  Elapsed {:?}",
                 day03::part2(&input),
+                timer.elapsed()
+            );
+        }
+    }
+    if day.is_none_or(|d| d == 4) {
+        println!("Day 4");
+        let input = std::fs::read_to_string(data_dir.join("day04.txt")).unwrap();
+        if part.is_none_or(|p| p == 1) {
+            let timer = Instant::now();
+            println!(
+                " Part 1 = {}  Elapsed {:?}",
+                day04::part1(&input),
+                timer.elapsed()
+            );
+        }
+        if part.is_none_or(|p| p == 2) {
+            let timer = Instant::now();
+            println!(
+                " Part 2 = {}  Elapsed {:?}",
+                day04::part2(&input),
                 timer.elapsed()
             );
         }
