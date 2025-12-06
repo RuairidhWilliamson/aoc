@@ -99,11 +99,10 @@ pub fn part2(input: &str) -> usize {
         if accessible_rolls.is_empty() {
             break;
         }
-
         for (x, y) in &accessible_rolls {
             unsafe { grid.set_unchecked(*x, *y, b'.') };
         }
-        total_removed_rolls += (&accessible_rolls).len();
+        total_removed_rolls += accessible_rolls.len();
         accessible_rolls.clear();
     }
     total_removed_rolls
