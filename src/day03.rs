@@ -12,12 +12,11 @@ fn inner<const N: usize>(input: &str) -> u64 {
         if line.is_empty() {
             continue;
         }
-        let mut nums = &line[..];
+        let mut nums = line;
         let mut joltage = 0;
         for i in 0..N {
-            let (a_index, &a_byte) = nums[..nums.len() - (N - i - 1)]
-                .as_bytes()
-                .into_iter()
+            let (a_index, &a_byte) = nums.as_bytes()[..nums.len() - (N - i - 1)]
+                .iter()
                 .enumerate()
                 .rev()
                 .max_by_key(|(_, x)| *x)

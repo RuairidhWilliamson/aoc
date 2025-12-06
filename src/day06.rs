@@ -60,10 +60,10 @@ pub fn part2(input: &str) -> usize {
     grand_total
 }
 
-fn parse_usize_iter(mut iter: impl Iterator<Item = u8>) -> Option<usize> {
+fn parse_usize_iter(iter: impl Iterator<Item = u8>) -> Option<usize> {
     let mut out: usize = 0;
     let mut found_digit = false;
-    while let Some(digit) = iter.next() {
+    for digit in iter {
         if digit.is_ascii_digit() {
             found_digit = true;
             out = out * 10 + (digit - b'0') as usize;

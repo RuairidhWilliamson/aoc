@@ -60,7 +60,7 @@ impl Config {
                         }
                     }
                     Err(err) if err.kind() == std::io::ErrorKind::NotFound => {}
-                    Err(err) => Err(err).unwrap(),
+                    Err(err) => panic!("{err:?}"),
                 }
             }
         }

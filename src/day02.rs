@@ -35,11 +35,11 @@ fn digits_of(n: u64) -> u32 {
 }
 
 fn factors_only_2(n: u32) -> impl Iterator<Item = u32> {
-    std::iter::once(2).filter(move |_| n % 2 == 0)
+    std::iter::once(2).filter(move |_| n.is_multiple_of(2))
 }
 
 fn factors_of(n: u32) -> impl Iterator<Item = u32> {
-    (2..=n).filter(move |x| n % x == 0)
+    (2..=n).filter(move |x| n.is_multiple_of(*x))
 }
 
 fn is_invalid_id<F, I>(id: u64, factor_fn: F) -> bool
@@ -53,7 +53,7 @@ where
         let mut id = id;
         let rem = id % denom;
         for _ in 1..len {
-            id = id / denom;
+            id /= denom;
             if id % denom != rem {
                 continue 'outer;
             }
