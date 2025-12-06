@@ -1,3 +1,5 @@
+use std::ops::RangeInclusive;
+
 pub fn part1(input: &str) -> u64 {
     let ranges = input.trim().split(',').map(|rng| {
         let (start, end) = rng.split_once('-').unwrap();
@@ -5,43 +7,49 @@ pub fn part1(input: &str) -> u64 {
     });
 
     ranges
-        .map(|(start, end)| {
-            (start..=end)
-                .filter(|id| is_invalid_id_part1(*id))
-                .sum::<u64>()
-        })
+        .map(|(start, end)| sum_invalid_ids(start..=end, factors_only_2, false))
         .sum()
 }
 
-fn is_invalid_id_part1(id: u64) -> bool {
-    let digits = digits_of(id);
-    if digits % 2 != 0 {
-        return false;
-    }
-    let mut x = 1;
-    for _ in 0..(digits / 2) {
-        x *= 10;
-    }
-    id / x == id % x
+pub fn part2(input: &str) -> u64 {
+    let ranges = input.trim().split(',').map(|rng| {
+        let (start, end) = rng.split_once('-').unwrap();
+        (start.parse::<u64>().unwrap(), end.parse::<u64>().unwrap())
+    });
+
+    ranges
+        .map(|(start, end)| sum_invalid_ids(start..=end, factors_of, true))
+        .sum()
 }
 
-#[test]
-fn test_is_invalid_part1() {
-    assert!(is_invalid_id_part1(123123));
+fn pow10(n: u32) -> u64 {
+    let mut x = 1;
+    for _ in 0..n {
+        x *= 10;
+    }
+    x
 }
 
 fn digits_of(n: u64) -> u32 {
     n.ilog10() + 1
 }
 
+fn factors_only_2(n: u32) -> impl Iterator<Item = u32> {
+    std::iter::once(2).filter(move |_| n % 2 == 0)
+}
+
 fn factors_of(n: u32) -> impl Iterator<Item = u32> {
     (2..=n).filter(move |x| n % x == 0)
 }
 
-fn is_invalid_id_part2(id: u64) -> bool {
+fn is_invalid_id<F, I>(id: u64, factor_fn: F) -> bool
+where
+    F: Fn(u32) -> I + Copy,
+    I: Iterator<Item = u32>,
+{
     let digits = digits_of(id);
-    'outer: for len in factors_of(digits) {
-        let denom = 10u64.pow(digits / len);
+    'outer: for len in factor_fn(digits) {
+        let denom = pow10(digits / len);
         let mut id = id;
         let rem = id % denom;
         for _ in 1..len {
@@ -55,22 +63,51 @@ fn is_invalid_id_part2(id: u64) -> bool {
     false
 }
 
-fn find_invalid_ids_part2(rng: std::ops::RangeInclusive<u64>) -> impl Iterator<Item = u64> {
-    rng.filter(|id| is_invalid_id_part2(*id))
-}
-
-pub fn part2(input: &str) -> u64 {
-    let ranges = input.trim().split(',').map(|rng| {
-        let (start, end) = rng.split_once('-').unwrap();
-        (start.parse::<u64>().unwrap(), end.parse::<u64>().unwrap())
-    });
-
-    ranges
-        .map(|(start, end)| find_invalid_ids_part2(start..=end).sum::<u64>())
-        .sum()
+fn sum_invalid_ids<F, I>(rng: RangeInclusive<u64>, factor_fn: F, dedup: bool) -> u64
+where
+    F: Fn(u32) -> I + Copy,
+    I: Iterator<Item = u32>,
+{
+    let (start, end) = rng.clone().into_inner();
+    let start_digits = digits_of(start);
+    let end_digits = digits_of(end);
+    if start_digits == end_digits {
+        let digits = start_digits;
+        return factor_fn(digits)
+            .map(|len| {
+                let mult = pow10(digits / len);
+                let x = pow10(digits - digits / len);
+                (start / x..=end / x)
+                    .filter(|left| !dedup || !is_invalid_id(*left, factor_fn))
+                    .map(|left| {
+                        let mut id = left;
+                        for _ in 1..len {
+                            id = id * mult + left;
+                        }
+                        id
+                    })
+                    .filter(|id| start <= *id && *id <= end)
+                    .sum::<u64>()
+            })
+            .sum::<u64>();
+    }
+    if start_digits + 1 == end_digits {
+        let x = pow10(start_digits);
+        return sum_invalid_ids(start..=x - 1, factor_fn, dedup)
+            + sum_invalid_ids(x..=end, factor_fn, dedup);
+    }
+    // Fallback brute force
+    rng.filter(|id| is_invalid_id(*id, factor_fn)).sum()
 }
 
 #[test]
 fn test_is_invalid_part2() {
-    assert!(is_invalid_id_part2(565656));
+    assert!(is_invalid_id(565656, factors_of));
+}
+
+#[test]
+fn test_digits_of() {
+    assert_eq!(digits_of(9), 1);
+    assert_eq!(digits_of(10), 2);
+    assert_eq!(digits_of(11), 2);
 }
