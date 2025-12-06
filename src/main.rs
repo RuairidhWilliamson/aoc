@@ -5,7 +5,12 @@ mod day04;
 mod day05;
 mod day06;
 
-use std::{path::Path, time::Instant};
+use std::{
+    path::Path,
+    process::ExitCode,
+    sync::atomic::{AtomicBool, Ordering},
+    time::Instant,
+};
 
 macro_rules! day {
     ($config:ident, $module:ident, $day:expr) => {
@@ -27,6 +32,7 @@ struct Config {
     input_dir: &'static Path,
     bless_snapshots: bool,
     snapshot_dir: &'static Path,
+    sucess: AtomicBool,
 }
 
 impl Config {
@@ -49,7 +55,8 @@ impl Config {
                 match std::fs::read_to_string(&snapshot_path) {
                     Ok(snapshot) => {
                         if snapshot != result.to_string() {
-                            println!(" Snapshot did not match!!!")
+                            println!(" Snapshot did not match!!!");
+                            self.sucess.store(false, Ordering::Relaxed);
                         }
                     }
                     Err(err) if err.kind() == std::io::ErrorKind::NotFound => {}
@@ -60,7 +67,7 @@ impl Config {
     }
 }
 
-fn main() {
+fn main() -> ExitCode {
     let day_filter = std::env::var("DAY").ok().map(|d| d.parse::<u32>().unwrap());
     let part_filter = std::env::var("PART").ok().map(|p| p.parse::<u8>().unwrap());
     let use_testdata = env_is_enabled("TESTDATA");
@@ -82,6 +89,7 @@ fn main() {
         input_dir,
         bless_snapshots,
         snapshot_dir,
+        sucess: AtomicBool::new(true),
     };
 
     day!(config, day01, 1);
@@ -90,6 +98,12 @@ fn main() {
     day!(config, day04, 4);
     day!(config, day05, 5);
     day!(config, day06, 6);
+
+    if config.sucess.load(Ordering::Relaxed) {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
+    }
 }
 
 fn env_is_enabled(name: &str) -> bool {
