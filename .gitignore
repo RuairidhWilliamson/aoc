@@ -1,5 +1,5 @@
 /target
-/data
+/input
 perf.data
 perf.data.old
 flamegraph.svg

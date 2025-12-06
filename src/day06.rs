@@ -47,12 +47,10 @@ pub fn part2(input: &str) -> usize {
     let mut grand_total = 0;
     let mut numbers = Vec::new();
     for i in (0..line_length).rev() {
-        let numb: Vec<u8> = (0..(lines.len() - 1)).map(|j| lines[j][i]).collect();
-        let numb_str = str::from_utf8(&numb).unwrap().trim();
-        if numb_str.is_empty() {
+        let iter = (0..(lines.len() - 1)).map(|j| lines[j][i]);
+        let Some(numb) = parse_usize_iter(iter) else {
             continue;
-        }
-        let numb: usize = numb_str.parse().unwrap();
+        };
         numbers.push(numb);
         match lines[lines.len() - 1][i] {
             b' ' => {}
@@ -68,4 +66,14 @@ pub fn part2(input: &str) -> usize {
         }
     }
     grand_total
+}
+
+fn parse_usize_iter(iter: impl Iterator<Item = u8>) -> Option<usize> {
+    let numb: Vec<u8> = iter.collect();
+    let numb_str = str::from_utf8(&numb).unwrap().trim();
+    if numb_str.is_empty() {
+        return None;
+    }
+    let numb: usize = numb_str.parse().unwrap();
+    Some(numb)
 }
