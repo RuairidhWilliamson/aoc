@@ -3,4 +3,15 @@ name = "aoc"
 version = "0.1.0"
 edition = "2024"
 
+[profile.bench]
+debug = true
+strip = false
+
 [dependencies]
+
+[dev-dependencies]
+gungraun = "0.17.0"
+
+[[bench]]
+name = "bench"
+harness = false

@@ -1,10 +1,3 @@
-mod day01;
-mod day02;
-mod day03;
-mod day04;
-mod day05;
-mod day06;
-
 use std::{
     num::NonZero,
     path::Path,
@@ -21,8 +14,8 @@ macro_rules! day {
             let input =
                 std::fs::read_to_string($config.input_dir.join(string_day.to_owned() + ".txt"))
                     .unwrap();
-            $config.run_part::<1, _, _>($module::part1, &input, string_day);
-            $config.run_part::<2, _, _>($module::part2, &input, string_day);
+            $config.run_part::<1, _, _>(aoc::$module::part1, &input, string_day);
+            $config.run_part::<2, _, _>(aoc::$module::part2, &input, string_day);
         }
     };
 }
