@@ -6,6 +6,7 @@ mod day05;
 mod day06;
 
 use std::{
+    num::NonZero,
     path::Path,
     process::ExitCode,
     sync::atomic::{AtomicBool, Ordering},
@@ -29,6 +30,7 @@ macro_rules! day {
 struct Config {
     day_filter: Option<u32>,
     part_filter: Option<u8>,
+    count: NonZero<u32>,
     input_dir: &'static Path,
     bless_snapshots: bool,
     snapshot_dir: &'static Path,
@@ -36,16 +38,19 @@ struct Config {
 }
 
 impl Config {
-    fn run_part<const PART: u8, F: FnOnce(&str) -> T, T: std::fmt::Display>(
-        &self,
-        part_fn: F,
-        input: &str,
-        string_day: &str,
-    ) {
+    fn run_part<const PART: u8, F, T>(&self, part_fn: F, input: &str, string_day: &str)
+    where
+        F: Fn(&str) -> T,
+        T: std::fmt::Debug + Eq + std::fmt::Display,
+    {
         if self.part_filter.is_none_or(|p| p == PART) {
             let timer = Instant::now();
             let result = part_fn(input);
-            let elapsed = timer.elapsed();
+            for _ in 1..self.count.get() {
+                let r = part_fn(input);
+                assert_eq!(result, r);
+            }
+            let elapsed = timer.elapsed() / self.count.get();
             println!(" Part {PART} = {result}  Elapsed {elapsed:?}");
             let snapshot_name = format!("{string_day}_part{PART}.txt");
             let snapshot_path = self.snapshot_dir.join(snapshot_name);
@@ -72,6 +77,10 @@ fn main() -> ExitCode {
     let part_filter = std::env::var("PART").ok().map(|p| p.parse::<u8>().unwrap());
     let use_testdata = env_is_enabled("TESTDATA");
     let bless_snapshots = env_is_enabled("BLESS");
+    let count = std::env::var("COUNT")
+        .ok()
+        .map(|c| c.parse::<NonZero<u32>>().unwrap())
+        .unwrap_or(NonZero::new(1).unwrap());
     let input_dir = if use_testdata {
         Path::new("test_input")
     } else {
@@ -86,6 +95,7 @@ fn main() -> ExitCode {
     let config = &Config {
         day_filter,
         part_filter,
+        count,
         input_dir,
         bless_snapshots,
         snapshot_dir,

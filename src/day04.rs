@@ -20,30 +20,49 @@ impl<'a> AsciiGrid<'a> {
         }
     }
 
-    fn get(&self, x: usize, y: usize) -> Option<char> {
+    fn get(&self, x: usize, y: usize) -> Option<u8> {
         if x >= self.width || y >= self.height {
             return None;
         }
-        let index = x + y * (self.width + 1);
-        Some(self.contents.as_bytes()[index] as char)
+        Some(unsafe { self.get_unchecked(x, y) })
     }
 
-    fn set(&mut self, x: usize, y: usize, c: char) {
-        assert!(x < self.width);
-        assert!(y < self.height);
+    unsafe fn get_unchecked(&self, x: usize, y: usize) -> u8 {
+        debug_assert!(x < self.width);
+        debug_assert!(y < self.height);
         let index = x + y * (self.width + 1);
-        assert!(c.is_ascii());
+        debug_assert!(index < self.contents.len());
+        unsafe { *self.contents.as_bytes().get_unchecked(index) }
+    }
+
+    unsafe fn set_unchecked(&mut self, x: usize, y: usize, c: u8) {
+        debug_assert!(x < self.width);
+        debug_assert!(y < self.height);
+        let index = x + y * (self.width + 1);
+        debug_assert!(index < self.contents.len());
         unsafe {
-            self.contents.to_mut().as_mut_vec()[index] = c as u8;
+            *self.contents.to_mut().as_mut_vec().get_unchecked_mut(index) = c;
         }
     }
 
-    fn get_signed(&self, x: isize, y: isize) -> Option<char> {
-        if x < 0 || y < 0 {
-            return None;
-        }
-        self.get(x as usize, y as usize)
+    fn adjacent(&self, x: usize, y: usize) -> impl Iterator<Item = u8> {
+        [
+            (x.checked_sub(1), y.checked_sub(1)),
+            (x.checked_add(0), y.checked_sub(1)),
+            (x.checked_add(1), y.checked_sub(1)),
+            (x.checked_sub(1), y.checked_add(0)),
+            (x.checked_add(1), y.checked_add(0)),
+            (x.checked_sub(1), y.checked_add(1)),
+            (x.checked_add(0), y.checked_add(1)),
+            (x.checked_add(1), y.checked_add(1)),
+        ]
+        .into_iter()
+        .filter_map(|(x, y)| self.get(x?, y?))
     }
+}
+
+fn is_accessible(grid: &AsciiGrid, x: usize, y: usize) -> bool {
+    grid.adjacent(x, y).filter(|c| *c == b'@').count() < 4
 }
 
 pub fn part1(input: &str) -> u32 {
@@ -51,7 +70,7 @@ pub fn part1(input: &str) -> u32 {
     let mut accessible_rolls = 0;
     for y in 0..grid.height {
         for x in 0..grid.width {
-            if grid.get(x, y) != Some('@') {
+            if unsafe { grid.get_unchecked(x, y) } != b'@' {
                 continue;
             }
             if is_accessible(&grid, x, y) {
@@ -62,29 +81,14 @@ pub fn part1(input: &str) -> u32 {
     accessible_rolls
 }
 
-fn is_accessible(grid: &AsciiGrid, x: usize, y: usize) -> bool {
-    let mut roll_count = 0;
-    for i in -1..=1 {
-        for j in -1..=1 {
-            if !(i == 0 && j == 0)
-                && let Some(c) = grid.get_signed(x as isize + i, y as isize + j)
-                && c == '@'
-            {
-                roll_count += 1;
-            }
-        }
-    }
-    roll_count < 4
-}
-
-pub fn part2(input: &str) -> u32 {
+pub fn part2(input: &str) -> usize {
     let mut grid = AsciiGrid::new(input);
-    let mut removed_rolls = 0;
+    let mut total_removed_rolls = 0;
+    let mut accessible_rolls = Vec::new();
     loop {
-        let mut accessible_rolls = Vec::new();
         for y in 0..grid.height {
             for x in 0..grid.width {
-                if grid.get(x, y) != Some('@') {
+                if unsafe { grid.get_unchecked(x, y) } == b'.' {
                     continue;
                 }
                 if is_accessible(&grid, x, y) {
@@ -95,10 +99,12 @@ pub fn part2(input: &str) -> u32 {
         if accessible_rolls.is_empty() {
             break;
         }
-        for (x, y) in accessible_rolls {
-            grid.set(x, y, '.');
-            removed_rolls += 1;
+
+        for (x, y) in &accessible_rolls {
+            unsafe { grid.set_unchecked(*x, *y, b'.') };
         }
+        total_removed_rolls += (&accessible_rolls).len();
+        accessible_rolls.clear();
     }
-    removed_rolls
+    total_removed_rolls
 }
