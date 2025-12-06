@@ -73,7 +73,7 @@ where
     let end_digits = digits_of(end);
     if start_digits == end_digits {
         let digits = start_digits;
-        return factor_fn(digits)
+        factor_fn(digits)
             .map(|len| {
                 let mult = pow10(digits / len);
                 let x = pow10(digits - digits / len);
@@ -89,15 +89,15 @@ where
                     .filter(|id| start <= *id && *id <= end)
                     .sum::<u64>()
             })
-            .sum::<u64>();
-    }
-    if start_digits + 1 == end_digits {
+            .sum::<u64>()
+    } else if start_digits + 1 == end_digits {
         let x = pow10(start_digits);
-        return sum_invalid_ids(start..=x - 1, factor_fn, dedup)
-            + sum_invalid_ids(x..=end, factor_fn, dedup);
+        sum_invalid_ids(start..=x - 1, factor_fn, dedup)
+            + sum_invalid_ids(x..=end, factor_fn, dedup)
+    } else {
+        // Fallback brute force
+        rng.filter(|id| is_invalid_id(*id, factor_fn)).sum()
     }
-    // Fallback brute force
-    rng.filter(|id| is_invalid_id(*id, factor_fn)).sum()
 }
 
 #[test]
