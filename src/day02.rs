@@ -1,28 +1,32 @@
-use std::ops::RangeInclusive;
-
-pub fn part1(input: &str) -> u64 {
+pub fn part1(input: &str) -> usize {
     let ranges = input.trim().split(',').map(|rng| {
         let (start, end) = rng.split_once('-').unwrap();
-        (start.parse::<u64>().unwrap(), end.parse::<u64>().unwrap())
+        (
+            start.parse::<usize>().unwrap(),
+            end.parse::<usize>().unwrap(),
+        )
     });
 
     ranges
-        .map(|(start, end)| sum_invalid_ids(start..=end, factors_only_2, false))
+        .map(|(start, end)| sum_invalid_ids((start, end), factors_only_2, false))
         .sum()
 }
 
-pub fn part2(input: &str) -> u64 {
+pub fn part2(input: &str) -> usize {
     let ranges = input.trim().split(',').map(|rng| {
         let (start, end) = rng.split_once('-').unwrap();
-        (start.parse::<u64>().unwrap(), end.parse::<u64>().unwrap())
+        (
+            start.parse::<usize>().unwrap(),
+            end.parse::<usize>().unwrap(),
+        )
     });
 
     ranges
-        .map(|(start, end)| sum_invalid_ids(start..=end, factors_of, true))
+        .map(|(start, end)| sum_invalid_ids((start, end), factors_of, true))
         .sum()
 }
 
-fn pow10(n: u32) -> u64 {
+fn pow10(n: u32) -> usize {
     let mut x = 1;
     for _ in 0..n {
         x *= 10;
@@ -30,7 +34,7 @@ fn pow10(n: u32) -> u64 {
     x
 }
 
-fn digits_of(n: u64) -> u32 {
+fn digits_of(n: usize) -> u32 {
     n.ilog10() + 1
 }
 
@@ -42,7 +46,7 @@ fn factors_of(n: u32) -> impl Iterator<Item = u32> {
     (2..=n).filter(move |x| n.is_multiple_of(*x))
 }
 
-fn is_invalid_id<F, I>(id: u64, factor_fn: F) -> bool
+fn is_invalid_id<F, I>(id: usize, factor_fn: F) -> bool
 where
     F: Fn(u32) -> I + Copy,
     I: Iterator<Item = u32>,
@@ -63,12 +67,11 @@ where
     false
 }
 
-fn sum_invalid_ids<F, I>(rng: RangeInclusive<u64>, factor_fn: F, dedup: bool) -> u64
+fn sum_invalid_ids<F, I>((start, end): (usize, usize), factor_fn: F, dedup: bool) -> usize
 where
     F: Fn(u32) -> I + Copy,
     I: Iterator<Item = u32>,
 {
-    let (start, end) = rng.clone().into_inner();
     let start_digits = digits_of(start);
     let end_digits = digits_of(end);
     if start_digits == end_digits {
@@ -87,16 +90,18 @@ where
                         id
                     })
                     .filter(|id| start <= *id && *id <= end)
-                    .sum::<u64>()
+                    .sum::<usize>()
             })
-            .sum::<u64>()
+            .sum::<usize>()
     } else if start_digits + 1 == end_digits {
         let x = pow10(start_digits);
-        sum_invalid_ids(start..=x - 1, factor_fn, dedup)
-            + sum_invalid_ids(x..=end, factor_fn, dedup)
+        sum_invalid_ids((start, x - 1), factor_fn, dedup)
+            + sum_invalid_ids((x, end), factor_fn, dedup)
     } else {
         // Fallback brute force
-        rng.filter(|id| is_invalid_id(*id, factor_fn)).sum()
+        (start..=end)
+            .filter(|id| is_invalid_id(*id, factor_fn))
+            .sum()
     }
 }
 

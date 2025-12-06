@@ -2,8 +2,7 @@ use std::{
     num::NonZero,
     path::Path,
     process::ExitCode,
-    sync::atomic::{AtomicBool, Ordering},
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 macro_rules! day {
@@ -27,11 +26,12 @@ struct Config {
     input_dir: &'static Path,
     bless_snapshots: bool,
     snapshot_dir: &'static Path,
-    sucess: AtomicBool,
+    sucess: bool,
+    elapsed: Duration,
 }
 
 impl Config {
-    fn run_part<const PART: u8, F, T>(&self, part_fn: F, input: &str, string_day: &str)
+    fn run_part<const PART: u8, F, T>(&mut self, part_fn: F, input: &str, string_day: &str)
     where
         F: Fn(&str) -> T,
         T: std::fmt::Debug + Eq + std::fmt::Display,
@@ -44,6 +44,7 @@ impl Config {
                 assert_eq!(result, r);
             }
             let elapsed = timer.elapsed() / self.count.get();
+            self.elapsed += elapsed;
             println!(" Part {PART} = {result}  Elapsed {elapsed:?}");
             let snapshot_name = format!("{string_day}_part{PART}.txt");
             let snapshot_path = self.snapshot_dir.join(snapshot_name);
@@ -54,7 +55,7 @@ impl Config {
                     Ok(snapshot) => {
                         if snapshot != result.to_string() {
                             println!(" Snapshot did not match!!!");
-                            self.sucess.store(false, Ordering::Relaxed);
+                            self.sucess = false;
                         }
                     }
                     Err(err) if err.kind() == std::io::ErrorKind::NotFound => {}
@@ -85,14 +86,15 @@ fn main() -> ExitCode {
         Path::new("snapshots")
     };
     std::fs::create_dir_all(snapshot_dir).unwrap();
-    let config = &Config {
+    let config = &mut Config {
         day_filter,
         part_filter,
         count,
         input_dir,
         bless_snapshots,
         snapshot_dir,
-        sucess: AtomicBool::new(true),
+        sucess: true,
+        elapsed: Duration::ZERO,
     };
 
     day!(config, day01, 1);
@@ -102,7 +104,9 @@ fn main() -> ExitCode {
     day!(config, day05, 5);
     day!(config, day06, 6);
 
-    if config.sucess.load(Ordering::Relaxed) {
+    println!("Total Elapsed {:?}", config.elapsed);
+
+    if config.sucess {
         ExitCode::SUCCESS
     } else {
         ExitCode::FAILURE

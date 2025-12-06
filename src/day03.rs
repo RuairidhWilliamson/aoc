@@ -1,12 +1,12 @@
-pub fn part1(input: &str) -> u64 {
+pub fn part1(input: &str) -> usize {
     inner::<2>(input)
 }
 
-pub fn part2(input: &str) -> u64 {
+pub fn part2(input: &str) -> usize {
     inner::<12>(input)
 }
 
-fn inner<const N: usize>(input: &str) -> u64 {
+fn inner<const N: usize>(input: &str) -> usize {
     let mut total = 0;
     for line in input.lines() {
         if line.is_empty() {
@@ -22,7 +22,7 @@ fn inner<const N: usize>(input: &str) -> u64 {
                 .max_by_key(|(_, x)| *x)
                 .unwrap();
             let a = (a_byte as char).to_digit(10).unwrap();
-            joltage = joltage * 10 + a as u64;
+            joltage = joltage * 10 + a as usize;
             nums = &nums[a_index + 1..];
         }
         total += joltage;

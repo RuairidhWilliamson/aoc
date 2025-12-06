@@ -9,7 +9,7 @@ pub fn part1(input: &str) -> usize {
             let ingredient: usize = line.parse().unwrap();
             match fresh.binary_search_by_key(&ingredient, |Range { start, end: _ }| *start) {
                 Ok(index) => fresh[index].contains(ingredient),
-                Err(index) if index == 0 => false,
+                Err(0) => false,
                 Err(index) => fresh[index - 1].contains(ingredient),
             }
         })

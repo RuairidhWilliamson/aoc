@@ -2,7 +2,7 @@ pub fn part1(input: &str) -> usize {
     let lines: Vec<&[u8]> = input
         .lines()
         .filter(|line| !line.is_empty())
-        .map(|line| line.as_bytes())
+        .map(str::as_bytes)
         .collect();
     let line_length = lines[0].len();
     let mut grand_total = 0;
@@ -33,7 +33,7 @@ pub fn part2(input: &str) -> usize {
     let lines: Vec<&[u8]> = input
         .lines()
         .filter(|line| !line.is_empty())
-        .map(|line| line.as_bytes())
+        .map(str::as_bytes)
         .collect();
     let line_length = lines[0].len();
     let mut grand_total = 0;
