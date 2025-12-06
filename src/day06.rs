@@ -1,40 +1,32 @@
 pub fn part1(input: &str) -> usize {
-    let mut number_lists: Vec<Vec<usize>> = Vec::new();
-    for line in input.lines() {
-        if line.is_empty() {
-            continue;
-        }
-        let first_char = line.chars().next().unwrap();
-        if first_char.is_digit(10) || first_char.is_whitespace() {
-            for (i, n) in line
-                .split(' ')
-                .filter(|n| !n.is_empty())
-                .map(|n| n.parse::<usize>().unwrap())
-                .enumerate()
-            {
-                while i >= number_lists.len() {
-                    number_lists.push(Vec::new());
-                }
-                number_lists[i].push(n);
+    let lines: Vec<&[u8]> = input
+        .lines()
+        .filter(|line| !line.is_empty())
+        .map(|line| line.as_bytes())
+        .collect();
+    let line_length = lines[0].len();
+    let mut grand_total = 0;
+    let mut width = 0;
+    for i in (0..line_length).rev() {
+        width += 1;
+        match lines[lines.len() - 1][i] {
+            b' ' => {}
+            b'*' => {
+                grand_total += (0..(lines.len() - 1))
+                    .map(|j| parse_usize_iter(lines[j][i..i + width].iter().copied()).unwrap())
+                    .product::<usize>();
+                width = 0;
             }
-        } else {
-            // last row
-            let mut grand_total: usize = 0;
-            for (i, sym) in line.split(' ').filter(|n| !n.is_empty()).enumerate() {
-                match sym {
-                    "*" => {
-                        grand_total += number_lists[i].iter().product::<usize>();
-                    }
-                    "+" => {
-                        grand_total += number_lists[i].iter().sum::<usize>();
-                    }
-                    _ => panic!("found bad operator symbol = {}", sym),
-                }
+            b'+' => {
+                grand_total += (0..(lines.len() - 1))
+                    .map(|j| parse_usize_iter(lines[j][i..i + width].iter().copied()).unwrap())
+                    .sum::<usize>();
+                width = 0;
             }
-            return grand_total;
+            c => panic!("unexpected {c}"),
         }
     }
-    panic!("missing operator row")
+    grand_total
 }
 
 pub fn part2(input: &str) -> usize {
