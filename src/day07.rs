@@ -9,10 +9,12 @@ pub fn part1(input: &str) -> usize {
             match c {
                 b'S' | b'|' => {
                     if unsafe { grid.get_unchecked(x, y + 1) } == b'^' {
-                        if x > 0 {
+                        if x > 0 && unsafe { grid.get_unchecked(x - 1, y + 1) } == b'.' {
                             unsafe { grid.set_unchecked(x - 1, y + 1, b'|') };
                         }
-                        if x + 1 < grid.width() {
+                        if x + 1 < grid.width()
+                            && unsafe { grid.get_unchecked(x + 1, y + 1) } == b'.'
+                        {
                             unsafe { grid.set_unchecked(x + 1, y + 1, b'|') };
                         }
                         split_count += 1;
