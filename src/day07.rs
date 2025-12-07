@@ -3,14 +3,18 @@ use crate::grid::ByteGrid;
 pub fn part1(input: &str) -> usize {
     let mut grid = ByteGrid::new(input.as_bytes());
     let mut split_count = 0;
-    for y in 0..grid.height() - 1 {
+    for y in 0..grid.height() - 2 {
         for x in 0..grid.width() {
             let c = unsafe { grid.get_unchecked(x, y) };
             match c {
                 b'S' | b'|' => {
                     if unsafe { grid.get_unchecked(x, y + 1) } == b'^' {
-                        let _ = grid.set(x - 1, y + 1, b'|');
-                        let _ = grid.set(x + 1, y + 1, b'|');
+                        if x > 0 {
+                            unsafe { grid.set_unchecked(x - 1, y + 1, b'|') };
+                        }
+                        if x + 1 < grid.width() {
+                            unsafe { grid.set_unchecked(x + 1, y + 1, b'|') };
+                        }
                         split_count += 1;
                     } else {
                         unsafe { grid.set_unchecked(x, y + 1, b'|') };
@@ -52,7 +56,9 @@ pub fn part2(input: &str) -> usize {
             }
         }
         std::mem::swap(&mut counts, &mut new_counts);
-        new_counts.fill(0);
+        for x in &mut new_counts {
+            *x = 0;
+        }
     }
     counts.iter().sum()
 }
