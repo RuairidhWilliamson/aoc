@@ -5,15 +5,15 @@ pub fn part1(input: &str) -> usize {
     let mut split_count = 0;
     for y in 0..grid.height() - 1 {
         for x in 0..grid.width() {
-            let c = grid.get(x, y).unwrap();
+            let c = unsafe { grid.get_unchecked(x, y) };
             match c {
                 b'S' | b'|' => {
-                    if grid.get(x, y + 1).unwrap() == b'^' {
+                    if unsafe { grid.get_unchecked(x, y + 1) } == b'^' {
                         let _ = grid.set(x - 1, y + 1, b'|');
                         let _ = grid.set(x + 1, y + 1, b'|');
                         split_count += 1;
                     } else {
-                        grid.set(x, y + 1, b'|').unwrap();
+                        unsafe { grid.set_unchecked(x, y + 1, b'|') };
                     }
                 }
                 b'.' | b'^' => {}
@@ -28,18 +28,18 @@ pub fn part1(input: &str) -> usize {
 
 pub fn part2(input: &str) -> usize {
     let grid = ByteGrid::new(input.as_bytes());
+    let mut counts = vec![0usize; grid.width()];
+    let mut new_counts = vec![0usize; grid.width()];
     let start_x = (0..grid.width())
         .find(|x| {
-            let c = grid.get(*x, 0).unwrap();
+            let c = unsafe { grid.get_unchecked(*x, 0) };
             c == b'S'
         })
         .unwrap();
-    let mut counts = vec![0usize; grid.width()];
-    let mut new_counts = counts.clone();
     counts[start_x] = 1;
     for y in 1..grid.height() {
         for x in 0..grid.width() {
-            let c = grid.get(x, y).unwrap();
+            let c = unsafe { grid.get_unchecked(x, y) };
             match c {
                 b'.' => {
                     new_counts[x] += counts[x];
