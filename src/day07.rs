@@ -59,16 +59,18 @@ pub fn part2(input: &str) -> usize {
                     new_counts[x] += counts[x];
                 }
                 b'^' => {
-                    new_counts.get_mut(x - 1).map(|v| *v += counts[x]);
-                    new_counts.get_mut(x + 1).map(|v| *v += counts[x]);
+                    if let Some(v) = new_counts.get_mut(x - 1) {
+                        *v += counts[x];
+                    }
+                    if let Some(v) = new_counts.get_mut(x + 1) {
+                        *v += counts[x];
+                    }
                 }
                 c => panic!("unexpected symbol {c}"),
             }
         }
         std::mem::swap(&mut counts, &mut new_counts);
-        for x in &mut new_counts {
-            *x = 0;
-        }
+        new_counts.fill(0);
     }
     counts.iter().sum()
 }

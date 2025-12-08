@@ -1,5 +1,8 @@
 use std::borrow::Cow;
 
+#[derive(Debug)]
+pub struct OutOfBounds;
+
 pub struct ByteGrid<'a> {
     contents: Cow<'a, [u8]>,
     width: usize,
@@ -41,6 +44,8 @@ impl<'a> ByteGrid<'a> {
         Some(unsafe { self.get_unchecked(x, y) })
     }
 
+    /// # Safety
+    /// x < width and y < height
     pub unsafe fn get_unchecked(&self, x: usize, y: usize) -> u8 {
         debug_assert!(x < self.width);
         debug_assert!(y < self.height);
@@ -49,17 +54,19 @@ impl<'a> ByteGrid<'a> {
         unsafe { *self.contents.get_unchecked(index) }
     }
 
-    pub fn set(&mut self, x: usize, y: usize, c: u8) -> Result<(), ()> {
+    pub fn set(&mut self, x: usize, y: usize, c: u8) -> Result<(), OutOfBounds> {
         if x < self.width && y < self.height {
             unsafe {
                 self.set_unchecked(x, y, c);
             }
             Ok(())
         } else {
-            Err(())
+            Err(OutOfBounds)
         }
     }
 
+    /// # Safety
+    /// x < width and y < height
     pub unsafe fn set_unchecked(&mut self, x: usize, y: usize, c: u8) {
         debug_assert!(x < self.width);
         debug_assert!(y < self.height);

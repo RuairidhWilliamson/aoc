@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 pub fn part1(input: &str) -> usize {
-    let points: Vec<Point> = input.lines().map(|line| Point::from_line(line)).collect();
+    let points: Vec<Point> = input.lines().map(Point::from_line).collect();
     let mut edges: Vec<(Point, Point, usize)> = points
         .iter()
         .enumerate()
@@ -42,16 +42,16 @@ pub fn part1(input: &str) -> usize {
             }
         }
     }
-    circuits.sort_by_key(|c| c.len());
+    circuits.sort_by_key(HashSet::len);
     assert!(circuits.len() >= 3);
     circuits[circuits.len() - 3..]
         .iter()
-        .map(|circuit| circuit.len())
+        .map(HashSet::len)
         .product()
 }
 
 pub fn part2(input: &str) -> usize {
-    let points: Vec<Point> = input.lines().map(|line| Point::from_line(line)).collect();
+    let points: Vec<Point> = input.lines().map(Point::from_line).collect();
     let mut edges: Vec<(Point, Point, usize)> = points
         .iter()
         .enumerate()
@@ -123,9 +123,9 @@ impl Point {
     }
 }
 
-fn find_circuit_containing_point(a: &Point, circuits: &Vec<HashSet<Point>>) -> Option<usize> {
+fn find_circuit_containing_point(a: &Point, circuits: &[HashSet<Point>]) -> Option<usize> {
     circuits
-        .into_iter()
+        .iter()
         .enumerate()
         .find(|(_, circuit)| circuit.contains(a))
         .map(|(i, _)| i)
