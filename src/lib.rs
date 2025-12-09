@@ -8,6 +8,7 @@ pub mod day05;
 pub mod day06;
 pub mod day07;
 pub mod day08;
+pub mod day09;
 
 use std::{
     num::NonZero,
@@ -90,7 +91,9 @@ impl Config {
                             self.sucess = false;
                         }
                     }
-                    Err(err) if err.kind() == std::io::ErrorKind::NotFound => {}
+                    Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+                        println!(" Snapshot not set");
+                    }
                     Err(err) => panic!("{err:?}"),
                 }
             }

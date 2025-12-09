@@ -23,6 +23,7 @@ fn main() -> ExitCode {
     day!(config, day06, 6);
     day!(config, day07, 7);
     day!(config, day08, 8);
+    day!(config, day09, 9);
 
     println!("Total Elapsed {:?}", config.elapsed);
 
