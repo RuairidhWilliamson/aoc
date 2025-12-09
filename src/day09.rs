@@ -1,6 +1,3 @@
-use kdam::par_tqdm;
-use rayon::iter::{IntoParallelIterator, ParallelIterator as _};
-
 pub fn part1(input: &str) -> usize {
     let points: Vec<Point> = input
         .lines()
@@ -47,7 +44,7 @@ pub fn part2(input: &str) -> usize {
 
     grid.fill_inner(3);
 
-    let rects: Vec<(Point, Point)> = points
+    points
         .iter()
         .enumerate()
         .flat_map(|(i, a)| points[..i].iter().map(move |b| (*a, *b)))
@@ -56,9 +53,6 @@ pub fn part2(input: &str) -> usize {
             a.rect_edges_iter(b)
                 .all(|p| unsafe { grid.get_unchecked(p) } != 0)
         })
-        .collect();
-
-    par_tqdm!(rects.into_par_iter())
         .filter(|(a, b)| {
             points
                 .iter()
