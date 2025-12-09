@@ -47,25 +47,31 @@ pub fn part2(input: &str) -> usize {
 
     grid.fill_inner(3);
 
-    let points_pairs: Vec<(Point, Point)> = points
+    let rects: Vec<(Point, Point)> = points
         .iter()
         .enumerate()
         .flat_map(|(i, a)| points[..i].iter().map(move |b| (*a, *b)))
-        .collect();
-
-    // Remove obviously wrong rects
-    let points_pairs: Vec<_> = par_tqdm!(points_pairs.into_par_iter())
         .filter(|(a, b)| {
+            // Remove obviously wrong rects
             a.rect_edges_iter(b)
                 .all(|p| unsafe { grid.get_unchecked(p) } != 0)
         })
         .collect();
 
-    // Correctly filter the remaining rects properly
-    par_tqdm!(points_pairs.into_par_iter())
+    par_tqdm!(rects.into_par_iter())
         .filter(|(a, b)| {
-            a.rect_iter(b)
-                .all(|p| unsafe { grid.get_unchecked(p) } != 0)
+            points
+                .iter()
+                .filter(|p| a.rect_contains(b, p))
+                .flat_map(|Point { x, y }| {
+                    [
+                        Point { x: x - 1, y: y - 1 },
+                        Point { x: x + 1, y: y - 1 },
+                        Point { x: x + 1, y: y + 1 },
+                        Point { x: x - 1, y: y + 1 },
+                    ]
+                })
+                .all(|p| !a.rect_contains(b, &p) || grid.get(p) != Some(0))
         })
         .map(|(a, b)| a.area(&b))
         .max()
@@ -81,6 +87,14 @@ struct Point {
 impl Point {
     fn area(&self, other: &Self) -> usize {
         (self.x.abs_diff(other.x) + 1) * (self.y.abs_diff(other.y) + 1)
+    }
+
+    fn rect_contains(&self, other: &Self, needle: &Self) -> bool {
+        let min_x = self.x.min(other.x);
+        let max_x = self.x.max(other.x);
+        let min_y = self.y.min(other.y);
+        let max_y = self.y.max(other.y);
+        min_x <= needle.x && needle.x <= max_x && min_y <= needle.y && needle.y <= max_y
     }
 
     fn rect_iter(&self, other: &Self) -> impl Iterator<Item = Point> {
@@ -139,6 +153,10 @@ impl Grid {
         }
     }
 
+    fn set_unchecked(&mut self, Point { x, y }: Point, v: u8) {
+        *unsafe { self.cells.get_unchecked_mut(x + y * self.width) } = v;
+    }
+
     fn set_rect(&mut self, start: Point, end: Point, v: u8) {
         for p in start.rect_iter(&end) {
             self.set(p, v);
@@ -150,7 +168,7 @@ impl Grid {
             let mut inside = false;
             let mut edge = false;
             for x in 0..self.width {
-                let v = self.get(Point { x, y }).unwrap();
+                let v = unsafe { self.get_unchecked(Point { x, y }) };
                 match v {
                     2 => {
                         edge = !edge;
@@ -162,7 +180,7 @@ impl Grid {
                         inside = !inside;
                     }
                     0 if inside && !edge => {
-                        self.set(Point { x, y }, set_value);
+                        self.set_unchecked(Point { x, y }, set_value);
                     }
                     _ => {}
                 }
