@@ -13,7 +13,7 @@ pub fn part1(input: &str) -> u32 {
         .sum()
 }
 
-pub fn part2(input: &str) -> u16 {
+pub fn part2(input: &str) -> usize {
     input
         .lines()
         .map(Problem::parse_line)
@@ -21,11 +21,9 @@ pub fn part2(input: &str) -> u16 {
         .sum()
 }
 
-type UX = u16;
-
 struct Problem {
     buttons: Vec<Vec<usize>>,
-    joltage: Vec<UX>,
+    joltage: Vec<usize>,
 }
 
 impl Problem {
@@ -58,37 +56,36 @@ impl Problem {
         Self { buttons, joltage }
     }
 
-    fn check_solution_unsigned(&self, presses: &[u16]) -> bool {
+    fn check_solution_unsigned(&self, presses: &[usize]) -> bool {
         (0..self.joltage.len()).all(|i| {
             let sum = presses
                 .iter()
                 .zip(self.buttons.iter())
                 .filter(|(_, b)| b.contains(&i))
                 .map(|(p, _)| p)
-                .sum::<u16>() as UX;
+                .sum::<usize>() as usize;
             let j = self.joltage[i];
             if sum != j {
-                // dbg!(sum, j);
                 return false;
             }
             true
         })
     }
 
-    fn solve_please(&self) -> u16 {
+    fn solve_please(&self) -> usize {
         let matrix = self.build_matrix();
         let a_bad_solution = self.find_any_solution(&matrix).unwrap();
         assert!(self.check_solution_unsigned(&a_bad_solution));
-        let total = a_bad_solution.iter().sum::<u16>();
+        let total = a_bad_solution.iter().sum::<usize>();
         let max = self.joltage.iter().copied().max().unwrap();
         if let Some(solution) = (max..total)
             .into_par_iter()
             .rev()
-            .find_map_last(|n| self.can_solve_n(&matrix, f32::from(n)))
+            .find_map_last(|n| self.can_solve_n(&matrix, n as f32))
         {
             assert!(
                 self.check_solution_unsigned(&solution),
-                "we found a bad solution"
+                "found a bad solution"
             );
             solution.iter().sum()
         } else {
@@ -104,18 +101,18 @@ impl Problem {
             }
         }
         for (i, x) in self.joltage.iter().enumerate() {
-            matrix[(self.buttons.len(), i)] = f32::from(*x);
+            matrix[(self.buttons.len(), i)] = *x as f32;
         }
         matrix.guassian_elimination();
         matrix.reduced_row_echelon();
         matrix
     }
 
-    fn find_any_solution(&self, matrix: &Grid<f32>) -> Option<Vec<u16>> {
+    fn find_any_solution(&self, matrix: &Grid<f32>) -> Option<Vec<usize>> {
         self.search_indeteriminate_matrix_solutions(matrix)
     }
 
-    fn can_solve_n(&self, matrix: &Grid<f32>, n: f32) -> Option<Vec<u16>> {
+    fn can_solve_n(&self, matrix: &Grid<f32>, n: f32) -> Option<Vec<usize>> {
         let mut matrix = matrix.clone();
         let mut v = vec![1.0; matrix.width()];
         v[matrix.width() - 1] = n;
@@ -123,7 +120,7 @@ impl Problem {
         self.search_indeteriminate_matrix_solutions(&matrix)
     }
 
-    fn search_indeteriminate_matrix_solutions(&self, matrix: &Grid<f32>) -> Option<Vec<u16>> {
+    fn search_indeteriminate_matrix_solutions(&self, matrix: &Grid<f32>) -> Option<Vec<usize>> {
         let mut matrix = matrix.clone();
         let v = vec![0.0; matrix.width()];
         while matrix.height() < matrix.width() - 1 {
@@ -131,7 +128,7 @@ impl Problem {
         }
         matrix.guassian_elimination();
         matrix.reduced_row_echelon();
-        let max = self.joltage.iter().sum::<UX>() as usize;
+        let max = self.joltage.iter().sum::<usize>() as usize;
         let mut missing = 0;
         {
             let mut matrix = matrix.clone();
@@ -182,7 +179,7 @@ impl Problem {
                 answer[i] = rounded_value;
             }
             #[expect(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-            let answer: Vec<_> = answer.into_iter().map(|b| b as u16).collect();
+            let answer: Vec<_> = answer.into_iter().map(|b| b as usize).collect();
             if self.check_solution_unsigned(&answer) {
                 return Some(answer);
             }
