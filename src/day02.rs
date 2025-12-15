@@ -107,7 +107,7 @@ where
 
 #[test]
 fn test_is_invalid_part2() {
-    assert!(is_invalid_id(565656, factors_of));
+    assert!(is_invalid_id(565_656, factors_of));
 }
 
 #[test]

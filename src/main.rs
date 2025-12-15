@@ -5,8 +5,9 @@ macro_rules! day {
         let string_day = stringify!($module);
         if $config.day_filter.is_none_or(|d| d == $day) {
             println!("Day {}", $day);
-            let input = $config.load_input(string_day);
+            let input = $config.load_input::<1>(string_day);
             $config.run_part::<1, _, _>(aoc::$module::part1, &input, string_day);
+            let input = $config.load_input::<2>(string_day);
             $config.run_part::<2, _, _>(aoc::$module::part2, &input, string_day);
         }
     };
@@ -24,6 +25,9 @@ fn main() -> ExitCode {
     day!(config, day07, 7);
     day!(config, day08, 8);
     day!(config, day09, 9);
+    day!(config, day10, 10);
+    day!(config, day11, 11);
+    day!(config, day12, 12);
 
     println!("Total Elapsed {:?}", config.elapsed);
 

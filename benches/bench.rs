@@ -1,3 +1,5 @@
+#![allow(clippy::needless_pass_by_value, clippy::exit)]
+
 use gungraun::{library_benchmark, library_benchmark_group, main};
 
 fn read_input(path: &str) -> String {

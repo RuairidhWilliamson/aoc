@@ -1,7 +1,7 @@
-use crate::grid::ByteGrid;
+use crate::ascii_grid::AsciiGrid;
 
 pub fn part1(input: &str) -> usize {
-    let mut grid = ByteGrid::new(input.as_bytes());
+    let mut grid = AsciiGrid::new(input.as_bytes());
     let mut split_count = 0;
     for y in 0..grid.height() - 2 {
         for x in 0..grid.width() {
@@ -41,7 +41,7 @@ pub fn part1(input: &str) -> usize {
 }
 
 pub fn part2(input: &str) -> usize {
-    let grid = ByteGrid::new(input.as_bytes());
+    let grid = AsciiGrid::new(input.as_bytes());
     let mut counts = vec![0usize; grid.width()];
     let mut new_counts = vec![0usize; grid.width()];
     let start_x = (0..grid.width())

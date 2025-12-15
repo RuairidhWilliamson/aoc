@@ -1,3 +1,4 @@
+pub mod ascii_grid;
 pub mod grid;
 
 pub mod day01;
@@ -9,8 +10,12 @@ pub mod day06;
 pub mod day07;
 pub mod day08;
 pub mod day09;
+pub mod day10;
+pub mod day11;
+pub mod day12;
 
 use std::{
+    io::ErrorKind,
     num::NonZero,
     path::Path,
     time::{Duration, Instant},
@@ -60,8 +65,19 @@ impl Config {
         }
     }
 
-    pub fn load_input(&self, string_day: &str) -> String {
-        std::fs::read_to_string(self.input_dir.join(string_day.to_owned() + ".txt")).unwrap()
+    pub fn load_input<const PART: u8>(&self, string_day: &str) -> String {
+        let res = std::fs::read_to_string(self.input_dir.join(string_day.to_owned() + ".txt"));
+        match res {
+            Ok(contents) => contents,
+            Err(err) if err.kind() == ErrorKind::NotFound => std::fs::read_to_string(
+                self.input_dir
+                    .join(format!("{}_part{}.txt", string_day.to_owned(), PART)),
+            )
+            .unwrap(),
+            Err(err) => {
+                panic!("{}", err)
+            }
+        }
     }
 
     pub fn run_part<const PART: u8, F, T>(&mut self, part_fn: F, input: &str, string_day: &str)
