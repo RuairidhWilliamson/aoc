@@ -1,5 +1,7 @@
 use itertools::{Itertools as _, repeat_n};
-use rayon::iter::{IndexedParallelIterator as _, IntoParallelIterator as _, ParallelIterator as _};
+use rayon::iter::{
+    IndexedParallelIterator as _, IntoParallelIterator as _, ParallelBridge, ParallelIterator as _,
+};
 
 use crate::grid::Grid;
 
@@ -56,10 +58,10 @@ impl Problem {
         Self { buttons, joltage }
     }
 
-    fn check_solution_unsigned(&self, presses: &[usize]) -> bool {
+    fn check_solution_unsigned(&self, presses: impl Clone + Iterator<Item = usize>) -> bool {
         (0..self.joltage.len()).all(|i| {
             let sum = presses
-                .iter()
+                .clone()
                 .zip(self.buttons.iter())
                 .filter(|(_, b)| b.contains(&i))
                 .map(|(p, _)| p)
@@ -75,7 +77,7 @@ impl Problem {
     fn solve_please(&self) -> usize {
         let matrix = self.build_matrix();
         let a_bad_solution = self.find_any_solution(&matrix).unwrap();
-        assert!(self.check_solution_unsigned(&a_bad_solution));
+        assert!(self.check_solution_unsigned(a_bad_solution.iter().copied()));
         let total = a_bad_solution.iter().sum::<usize>();
         let max = self.joltage.iter().copied().max().unwrap();
         if let Some(solution) = (max..total)
@@ -84,7 +86,7 @@ impl Problem {
             .find_map_last(|n| self.can_solve_n(&matrix, n as f32))
         {
             assert!(
-                self.check_solution_unsigned(&solution),
+                self.check_solution_unsigned(solution.iter().copied()),
                 "found a bad solution"
             );
             solution.iter().sum()
@@ -148,43 +150,57 @@ impl Problem {
                 break;
             }
         }
-        'next: for indeterminates in repeat_n(0..=max, missing).multi_cartesian_product() {
-            let mut matrix = matrix.clone();
-            let mut missing = 0;
-            'outer: loop {
-                for i in 0..matrix.width() - 1 {
-                    if (matrix[(i, i)] - 1.0).abs() > f32::EPSILON {
-                        let mut v = vec![0.0; matrix.width()];
-                        v[i] = 1.0;
-                        v[matrix.width() - 1] = indeterminates[missing] as f32;
-                        matrix.add_row(&v);
-                        matrix.guassian_elimination();
-                        matrix.reduced_row_echelon();
-                        missing += 1;
-                        continue 'outer;
+        self.search_indeterminate_solutions_inner(matrix, max, missing)
+    }
+
+    fn search_indeterminate_solutions_inner(
+        &self,
+        matrix: Grid<f32>,
+        max: usize,
+        missing: usize,
+    ) -> Option<Vec<usize>> {
+        repeat_n(0..=max, missing)
+            .multi_cartesian_product()
+            .par_bridge()
+            .map(|indeterminates| {
+                let mut matrix = matrix.clone();
+                let mut missing = 0;
+                'outer: loop {
+                    for i in 0..matrix.width() - 1 {
+                        if (matrix[(i, i)] - 1.0).abs() > f32::EPSILON {
+                            let mut v = vec![0.0; matrix.width()];
+                            v[i] = 1.0;
+                            v[matrix.width() - 1] = indeterminates[missing] as f32;
+                            matrix.add_row(&v);
+                            matrix.guassian_elimination();
+                            matrix.reduced_row_echelon();
+                            missing += 1;
+                            continue 'outer;
+                        }
                     }
+                    break;
                 }
-                break;
-            }
-            let mut answer = vec![0.0; matrix.width() - 1];
-            for i in (0..matrix.width() - 1).rev() {
-                let s: f32 = (i..matrix.width() - 1)
-                    .map(|j| answer[j] * matrix[(j, i)])
-                    .sum();
-                let value = (matrix[(matrix.width() - 1, i)] - s) / matrix[(i, i)];
-                let rounded_value = value.round();
-                if value < -0.01 || (rounded_value - value).abs() > FUDGE_TOLERANCE {
-                    continue 'next;
+                let mut answer = vec![0.0; matrix.width() - 1];
+                for i in (0..matrix.width() - 1).rev() {
+                    let s: f32 = (i..matrix.width() - 1)
+                        .map(|j| answer[j] * matrix[(j, i)])
+                        .sum();
+                    let value = (matrix[(matrix.width() - 1, i)] - s) / matrix[(i, i)];
+                    let rounded_value = value.round();
+                    if value < -0.01 || (rounded_value - value).abs() > FUDGE_TOLERANCE {
+                        return None;
+                    }
+                    answer[i] = rounded_value;
                 }
-                answer[i] = rounded_value;
-            }
-            #[expect(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-            let answer: Vec<_> = answer.into_iter().map(|b| b as usize).collect();
-            if self.check_solution_unsigned(&answer) {
-                return Some(answer);
-            }
-        }
-        None
+                #[expect(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+                let answer = answer.into_iter().map(|b| b as usize);
+                if self.check_solution_unsigned(answer.clone()) {
+                    return Some(answer.collect());
+                }
+                None
+            })
+            .find_any(Option::is_some)
+            .flatten()
     }
 }
 
