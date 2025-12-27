@@ -1,3 +1,5 @@
+use rayon::iter::{IntoParallelRefIterator as _, ParallelBridge, ParallelIterator as _};
+
 use crate::{
     grid::{AugmentedMatrix, Grid},
     magic_iter::MagicIterVec,
@@ -12,14 +14,11 @@ pub fn part1(input: &str) -> u32 {
 }
 
 pub fn part2(input: &str) -> usize {
-    input
-        .lines()
-        .map(Problem::parse_line)
-        .map(|problem| {
-            let answer = problem.solve();
-            println!("{answer:?}");
-            answer.iter().copied().sum::<isize>() as usize
-        })
+    let problems = input.lines().map(Problem::parse_line);
+    problems
+        .collect::<Vec<_>>()
+        .par_iter()
+        .map(|problem| problem.solve().unwrap())
         .sum()
 }
 
@@ -101,7 +100,7 @@ struct Problem {
 
 impl Problem {
     fn parse_line(line: &str) -> Self {
-        println!("{line}");
+        // println!("{line}");
         let (_goal, rest) = line.split_once(' ').unwrap();
         let (rest, joltage) = rest.rsplit_once(' ').unwrap();
         let joltage: Vec<_> = joltage
@@ -149,49 +148,69 @@ impl Problem {
         })
     }
 
-    fn solve(&self) -> Vec<isize> {
-        struct Solution {
-            answer: Vec<isize>,
-            sum: isize,
-            missing_sum: usize,
-        }
+    fn solve(&self) -> Option<usize> {
+        let bad_solution = self.find_any_solution()?;
+        Some(
+            (self.max_joltage()..bad_solution)
+                .par_bridge()
+                .filter_map(|n| self.find_solution_of_size(n))
+                .min()
+                .unwrap_or(bad_solution),
+        )
+    }
+
+    fn find_solution_of_size(&self, n: usize) -> Option<usize> {
         let mut matrix = self.build_matrix_new();
+        let mut v = vec![1; matrix.width()];
+        v[matrix.width() - 1] = n as isize;
+        matrix.add_row(&v);
         matrix.bareiss();
         matrix.remove_trailing_zero_rows();
-        let mut best: Option<Solution> = None;
-        let mut largest_missing = 0;
+        let max_joltage = self.max_joltage();
         let missing = (matrix.width() - 1).saturating_sub(matrix.rank());
         let mut iter = MagicIterVec::new(missing);
         while iter.update_next() {
-            let missing_values = iter.state();
-            if largest_missing < iter.monotonic_sum() {
-                if iter.monotonic_sum() > self.max_joltage() {
-                    break;
-                }
-                if let Some(best) = best.as_ref() {
-                    if best.missing_sum + 10 < iter.monotonic_sum() {
-                        // break once the monotonic sum increases and we are not finding solutions
-                        break;
-                    }
-                }
-                largest_missing = iter.monotonic_sum();
+            if iter.monotonic_sum() > max_joltage || iter.monotonic_sum() > n {
+                break;
             }
+            let missing_values = iter.state();
             let Some(answer) = matrix.solve_with_unknowns(&missing_values) else {
                 continue;
             };
             if !self.check_solution_signed(answer.iter().copied()) {
                 continue;
             }
-            let sum: isize = answer.iter().copied().sum();
-            if best.as_ref().is_none_or(|best| sum < best.sum) {
-                best = Some(Solution {
-                    answer,
-                    sum: sum,
-                    missing_sum: iter.monotonic_sum(),
-                });
+            let sum: usize = answer.iter().map(|x| *x as usize).sum();
+            if sum != n {
+                continue;
             }
+            return Some(sum);
         }
-        best.unwrap().answer
+        None
+    }
+
+    fn find_any_solution(&self) -> Option<usize> {
+        let mut matrix = self.build_matrix_new();
+        matrix.bareiss();
+        matrix.remove_trailing_zero_rows();
+        let max_joltage = self.max_joltage();
+        let missing = (matrix.width() - 1).saturating_sub(matrix.rank());
+        let mut iter = MagicIterVec::new(missing);
+        while iter.update_next() {
+            if iter.monotonic_sum() > max_joltage {
+                break;
+            }
+            let missing_values = iter.state();
+            let Some(answer) = matrix.solve_with_unknowns(&missing_values) else {
+                continue;
+            };
+            if !self.check_solution_signed(answer.iter().copied()) {
+                continue;
+            }
+            let sum: usize = answer.iter().map(|x| *x as usize).sum();
+            return Some(sum);
+        }
+        None
     }
 
     fn max_joltage(&self) -> usize {
@@ -223,4 +242,17 @@ fn try_part2_integer() {
     println!("{}", matrix.display());
     let solution = matrix.solve_with_unknowns(&[0, 7, 6]).unwrap();
     assert!(problem.check_solution_signed(solution.iter().copied()));
+}
+
+#[test]
+fn try_part2_integer2() {
+    let input = "[#..#.##.#] (2,3,5,8) (0,1,2,5,6,7) (0,2) (1,2,4,5,6,7,8) (3,5,7) (0,7,8) (0,2,3,4,6,7) (0,1,3,6) (1,4,8) (0,3,4,8) (0,1,3,4,6,8) {69,48,39,66,47,35,56,50,62}";
+    let problem = Problem::parse_line(input);
+    let matrix = problem.build_matrix_new();
+    // Smallest solution
+    assert!(matrix.check_solution(&[13, 10, 0, 3, 9, 15, 13, 5, 5, 1, 25]));
+    // Another solution
+    assert!(matrix.check_solution(&[9, 2, 0, 19, 5, 15, 9, 25, 1, 17, 1]));
+    let solution = problem.solve().unwrap();
+    assert_eq!(solution, 99);
 }
