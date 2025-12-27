@@ -58,7 +58,7 @@ pub fn part2(input: &str) -> usize {
         // Remove obviously wrong rects
         let obvious_check = a
             .rect_edges_iter(b)
-            .all(|p| unsafe { grid.get_unchecked(p) } != 0);
+            .all(|p| unsafe { grid.get_point_unchecked(p) } != 0);
         obvious_check
             && points
                 .iter()

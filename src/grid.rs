@@ -95,7 +95,7 @@ impl<T: Copy> Grid<T> {
 
     /// # Safety
     /// Point must be in bounds
-    pub unsafe fn get_unchecked(&self, Point { x, y }: Point) -> T {
+    pub unsafe fn get_point_unchecked(&self, Point { x, y }: Point) -> T {
         debug_assert!(x < self.width);
         debug_assert!(y < self.height);
         unsafe { *self.cells.get_unchecked(x + y * self.width) }
@@ -125,7 +125,7 @@ impl<T: Copy> Grid<T> {
 
     pub fn iter(&self) -> impl Iterator<Item = T> {
         (0..self.height).flat_map(move |y| {
-            (0..self.width).map(move |x| unsafe { self.get_unchecked(Point { x, y }) })
+            (0..self.width).map(move |x| unsafe { self.get_point_unchecked(Point { x, y }) })
         })
     }
 

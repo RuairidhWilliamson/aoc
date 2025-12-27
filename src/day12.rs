@@ -1,7 +1,4 @@
-use std::{
-    collections::HashSet,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
 use crate::{
     ascii_grid::AsciiGrid,
@@ -32,9 +29,9 @@ pub fn part1(input: &str) -> usize {
     let mut shapes = Vec::new();
     for section in sections {
         let index = section.find('\n').unwrap();
-        let shape = Shape(AsciiGrid::new(&section.as_bytes()[index + 1..]));
-        assert_eq!(shape.0.width(), 3);
-        assert_eq!(shape.0.height(), 3);
+        let shape = Shape::new(AsciiGrid::new(&section.as_bytes()[index + 1..]));
+        assert_eq!(shape.grid.width(), 3);
+        assert_eq!(shape.grid.height(), 3);
         shapes.push(shape);
     }
     areas.iter().filter(|a| a.solve(&shapes)).count()
@@ -82,7 +79,7 @@ impl Solver<'_> {
             .iter()
             .enumerate()
             .filter(|(_, count)| **count > 0)
-            .map(|(i, _)| self.shapes[i].area())
+            .map(|(i, _)| self.shapes[i].area)
             .min()
             .unwrap_or_default()
     }
@@ -91,15 +88,15 @@ impl Solver<'_> {
         self.counts
             .iter()
             .enumerate()
-            .map(|(i, count)| count * self.shapes[i].area())
+            .map(|(i, count)| count * self.shapes[i].area)
             .sum::<usize>()
     }
 
     fn place(&mut self, placement: &Placement) -> Result<(), ()> {
         let shape = &self.shapes[placement.id];
-        if !(0..shape.0.height()).all(|y| {
-            (0..shape.0.width()).all(|x| {
-                shape.0.get(x, y).unwrap() == b'.'
+        if !(0..shape.grid.height()).all(|y| {
+            (0..shape.grid.width()).all(|x| {
+                shape.grid.get(x, y).unwrap() == b'.'
                     || placement
                         .get_point(x as isize, y as isize)
                         .is_some_and(|p| self.grid.get_point(p) == Some(Cell::Vacant))
@@ -108,9 +105,9 @@ impl Solver<'_> {
             return Err(());
         }
         self.counts[placement.id] -= 1;
-        (0..shape.0.height()).for_each(|y| {
-            (0..shape.0.width()).for_each(|x| {
-                if shape.0.get(x, y).unwrap() == b'#' {
+        (0..shape.grid.height()).for_each(|y| {
+            (0..shape.grid.width()).for_each(|x| {
+                if shape.grid.get(x, y).unwrap() == b'#' {
                     self.grid.set_point(
                         placement.get_point(x as isize, y as isize).unwrap(),
                         Cell::Occupied,
@@ -124,9 +121,9 @@ impl Solver<'_> {
     fn unplace(&mut self, placement: &Placement) {
         let shape = &self.shapes[placement.id];
         self.counts[placement.id] += 1;
-        (0..shape.0.height()).for_each(|y| {
-            (0..shape.0.width()).for_each(|x| {
-                if shape.0.get(x, y).unwrap() == b'#' {
+        (0..shape.grid.height()).for_each(|y| {
+            (0..shape.grid.width()).for_each(|x| {
+                if shape.grid.get(x, y).unwrap() == b'#' {
                     self.grid.set_point(
                         placement.get_point(x as isize, y as isize).unwrap(),
                         Cell::Vacant,
@@ -138,18 +135,19 @@ impl Solver<'_> {
 
     fn can_potentially_fit_all_shapes(&self) -> bool {
         let mut unoccupiable_region_area = 0;
-        let mut visited = HashSet::new();
+        let mut visited = Grid::<bool>::new_fill(false, self.grid.width(), self.grid.height());
         let mut to_visit = Vec::new();
         for y in 0..self.grid.height() {
             for x in 0..self.grid.width() {
                 debug_assert!(to_visit.is_empty());
                 let point = Point { x, y };
-                if self.grid.get_point(point).unwrap() != Cell::Vacant {
+                if unsafe { self.grid.get_point_unchecked(point) } != Cell::Vacant {
                     continue;
                 }
-                if !visited.insert(point) {
+                if unsafe { visited.get_point_unchecked(point) } {
                     continue;
                 }
+                visited.set_point(point, true);
                 to_visit.push(point);
                 let mut connected_count = 0;
                 while let Some(point) = to_visit.pop() {
@@ -157,7 +155,8 @@ impl Solver<'_> {
                         if self.grid.get_point(a) != Some(Cell::Vacant) {
                             continue;
                         }
-                        if visited.insert(a) {
+                        if !unsafe { visited.get_point_unchecked(a) } {
+                            visited.set_point(a, true);
                             connected_count += 1;
                             to_visit.push(a);
                         }
@@ -226,11 +225,17 @@ enum Cell {
     Occupied,
 }
 
-struct Shape<'a>(AsciiGrid<'a>);
+struct Shape<'a> {
+    grid: AsciiGrid<'a>,
+    area: usize,
+}
 
-impl Shape<'_> {
-    fn area(&self) -> usize {
-        self.0.iter().filter(|b| *b == b'#').count()
+impl<'a> Shape<'a> {
+    fn new(grid: AsciiGrid<'a>) -> Self {
+        Self {
+            area: grid.iter().filter(|b| *b == b'#').count(),
+            grid,
+        }
     }
 }
 
