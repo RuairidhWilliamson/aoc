@@ -276,34 +276,32 @@ impl DerefMut for AugmentedMatrix<isize> {
 
 impl AugmentedMatrix<isize> {
     pub fn bareiss(&mut self) {
-        let m = self.0.height;
-        let n = self.0.width;
+        let m = self.height;
+        let n = self.width;
         let mut prev = 1;
         for k in 0..(n - 1).min(m - 1) {
             if self.0[(k, k)] == 0 {
                 for i in (k + 1)..m {
-                    if self.0[(k, i)] != 0 {
-                        self.0.swap_rows(k, i);
+                    if self[(k, i)] != 0 {
+                        self.swap_rows(k, i);
                         break;
                     }
                 }
             }
-            let pivot = self.0[(k, k)];
+            let pivot = self[(k, k)];
             for i in (k + 1)..m {
                 for j in (k + 1)..n {
-                    let numerator = self.0[(j, i)] * pivot - self.0[(k, i)] * self.0[(j, k)];
+                    let numerator = self[(j, i)] * pivot - self[(k, i)] * self[(j, k)];
                     let divisor = prev;
-                    if divisor == 0 {
-                        // eprintln!("did not finish");
+                    let Some(value) = numerator.checked_div(divisor) else {
                         return;
-                    }
-                    let value = numerator / divisor;
-                    assert_eq!(numerator % divisor, 0);
-                    self.0[(j, i)] = value;
+                    };
+                    debug_assert_eq!(numerator % divisor, 0);
+                    self[(j, i)] = value;
                 }
             }
             for i in (k + 1)..m {
-                self.0[(k, i)] = 0;
+                self[(k, i)] = 0;
             }
             prev = pivot;
         }
@@ -386,6 +384,7 @@ impl AugmentedMatrix<isize> {
         answer.into_iter().collect()
     }
 
+    /// Must be called with the matrix in row echelon form
     pub fn solve_with_unknowns(&self, mut unknowns: &[usize]) -> Option<Vec<isize>> {
         let mut matrix = self.clone();
         for i in 0..matrix.width - 1 {

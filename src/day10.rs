@@ -1,6 +1,7 @@
 use rayon::iter::{IntoParallelRefIterator as _, ParallelBridge as _, ParallelIterator as _};
 
 use crate::{
+    env_is_enabled,
     grid::{AugmentedMatrix, Grid},
     magic_iter::MagicIterVec,
 };
@@ -15,11 +16,15 @@ pub fn part1(input: &str) -> u32 {
 
 pub fn part2(input: &str) -> usize {
     let problems = input.lines().map(Problem::parse_line);
-    problems
-        .collect::<Vec<_>>()
-        .par_iter()
-        .map(|problem| problem.solve().unwrap())
-        .sum()
+    if env_is_enabled("NO_RAYON") {
+        problems.map(|problem| problem.solve().unwrap()).sum()
+    } else {
+        problems
+            .collect::<Vec<_>>()
+            .par_iter()
+            .map(|problem| problem.solve().unwrap())
+            .sum()
+    }
 }
 
 struct Machine {
@@ -148,17 +153,26 @@ impl Problem {
 
     fn solve(&self) -> Option<usize> {
         let bad_solution = self.find_any_solution()?;
-        Some(
-            (self.max_joltage()..bad_solution)
-                .par_bridge()
-                .filter_map(|n| self.find_solution_of_size(n))
-                .min()
-                .unwrap_or(bad_solution),
-        )
+        if env_is_enabled("NO_RAYON") {
+            Some(
+                (self.max_joltage()..bad_solution)
+                    .filter_map(|n| self.find_solution_of_size(n))
+                    .min()
+                    .unwrap_or(bad_solution),
+            )
+        } else {
+            Some(
+                (self.max_joltage()..bad_solution)
+                    .par_bridge()
+                    .filter_map(|n| self.find_solution_of_size(n))
+                    .min()
+                    .unwrap_or(bad_solution),
+            )
+        }
     }
 
     fn find_solution_of_size(&self, n: usize) -> Option<usize> {
-        let mut matrix = self.build_matrix_new();
+        let mut matrix = self.build_matrix();
         let mut v = vec![1; matrix.width()];
         v[matrix.width() - 1] = n as isize;
         matrix.add_row(&v);
@@ -188,9 +202,10 @@ impl Problem {
     }
 
     fn find_any_solution(&self) -> Option<usize> {
-        let mut matrix = self.build_matrix_new();
+        let mut matrix = self.build_matrix();
         matrix.bareiss();
         matrix.remove_trailing_zero_rows();
+
         let max_joltage = self.max_joltage();
         let missing = (matrix.width() - 1).saturating_sub(matrix.rank());
         let mut iter = MagicIterVec::new(missing);
@@ -215,7 +230,7 @@ impl Problem {
         self.joltage.iter().copied().max().unwrap()
     }
 
-    fn build_matrix_new(&self) -> AugmentedMatrix<isize> {
+    fn build_matrix(&self) -> AugmentedMatrix<isize> {
         let mut matrix = Grid::<isize>::new_fill(0, self.buttons.len() + 1, self.joltage.len());
         for (i, buttons) in self.buttons.iter().enumerate() {
             for b in buttons {
@@ -233,7 +248,7 @@ impl Problem {
 fn try_part2_integer() {
     let input = "[#####.###.] (4,7,8) (0,1,2,3,5,6,8,9) (0,4,5,7,8,9) (2,3,5) (0,2,3,4,5,6,7,8) (5,6) (0,1,2,3,4,5,9) (0,1,2,5,6,9) (0,3,4,5,6,7,8,9) (3,4,5,6,8) (0,1,2,3,4,5,6,7,9) (0,8) (3,4,8,9) {261,225,243,252,56,278,262,29,257,242}";
     let problem = Problem::parse_line(input);
-    let mut matrix = problem.build_matrix_new();
+    let mut matrix = problem.build_matrix();
     assert!(matrix.check_solution(&[0, 203, 7, 0, 18, 12, 9, 13, 4, 12, 0, 7, 6]));
     println!("{}", matrix.display());
     matrix.bareiss();
@@ -246,7 +261,7 @@ fn try_part2_integer() {
 fn try_part2_integer2() {
     let input = "[#..#.##.#] (2,3,5,8) (0,1,2,5,6,7) (0,2) (1,2,4,5,6,7,8) (3,5,7) (0,7,8) (0,2,3,4,6,7) (0,1,3,6) (1,4,8) (0,3,4,8) (0,1,3,4,6,8) {69,48,39,66,47,35,56,50,62}";
     let problem = Problem::parse_line(input);
-    let matrix = problem.build_matrix_new();
+    let matrix = problem.build_matrix();
     // Smallest solution
     assert!(matrix.check_solution(&[13, 10, 0, 3, 9, 15, 13, 5, 5, 1, 25]));
     // Another solution
