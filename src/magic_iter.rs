@@ -46,6 +46,12 @@ pub struct MagicIterArr<const N: usize> {
     monotonic_sum: usize,
 }
 
+impl<const N: usize> Default for MagicIterArr<N> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<const N: usize> MagicIterArr<N> {
     pub fn new() -> Self {
         Self {
@@ -92,7 +98,7 @@ fn next_implementation(
         *first = false;
         return Some(());
     }
-    if state.len() == 0 {
+    if state.is_empty() {
         return None;
     }
     if do_the_shuffle(state) {

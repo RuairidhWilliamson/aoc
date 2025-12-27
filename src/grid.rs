@@ -275,22 +275,6 @@ impl DerefMut for AugmentedMatrix<isize> {
 }
 
 impl AugmentedMatrix<isize> {
-    pub fn fix_leading_principles(&mut self) {
-        let n = self.0.width;
-        let m = self.0.height;
-        'outer: for k in 0..(n - 1).min(m - 1) {
-            if self.0.get(k, k).unwrap() == 0 {
-                for j in (k + 1)..m {
-                    if self.0.get(k, j).unwrap() != 0 {
-                        self.0.swap_rows(k, j);
-                        continue 'outer;
-                    }
-                }
-                panic!("uh oh")
-            }
-        }
-    }
-
     pub fn bareiss(&mut self) {
         let m = self.0.height;
         let n = self.0.width;
@@ -362,6 +346,7 @@ impl AugmentedMatrix<isize> {
         }
     }
 
+    #[expect(clippy::needless_range_loop)]
     pub fn check_solution(&self, v: &[isize]) -> bool {
         assert_eq!(v.len(), self.0.width - 1);
         for i in 0..self.0.height {
@@ -376,17 +361,8 @@ impl AugmentedMatrix<isize> {
         true
     }
 
-    pub fn normalize_diagonal(&mut self) {
-        for i in 0..self.height.min(self.width - 1) {
-            if self[(i, i)] < 0 {
-                for j in 0..self.width {
-                    self[(j, i)] *= -1;
-                }
-            }
-        }
-    }
-
     /// Must be called with the matrix in row echelon form
+    #[expect(clippy::needless_range_loop)]
     pub fn solve(&self) -> Option<Vec<isize>> {
         if self.rank() < self.0.width - 1 {
             return None;
@@ -407,8 +383,7 @@ impl AugmentedMatrix<isize> {
             }
             answer[i] = Some(numerator / denominator);
         }
-        let answer: Option<Vec<isize>> = answer.into_iter().map(|x| x).collect();
-        return answer;
+        answer.into_iter().collect()
     }
 
     pub fn solve_with_unknowns(&self, mut unknowns: &[usize]) -> Option<Vec<isize>> {
@@ -416,7 +391,7 @@ impl AugmentedMatrix<isize> {
         for i in 0..matrix.width - 1 {
             if i >= matrix.height || matrix[(i, i)] == 0 {
                 let mut v = vec![0; self.width];
-                v[self.width - 1] = unknowns[0] as isize;
+                v[self.width - 1] = *unknowns.first()? as isize;
                 unknowns = &unknowns[1..];
                 v[i] = 1;
                 matrix.add_row(&v);

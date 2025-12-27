@@ -1,4 +1,4 @@
-use rayon::iter::{IntoParallelRefIterator as _, ParallelBridge, ParallelIterator as _};
+use rayon::iter::{IntoParallelRefIterator as _, ParallelBridge as _, ParallelIterator as _};
 
 use crate::{
     grid::{AugmentedMatrix, Grid},
@@ -129,23 +129,21 @@ impl Problem {
         Self { buttons, joltage }
     }
 
-    fn check_solution_signed(&self, presses: impl Clone + Iterator<Item = isize>) -> bool {
-        if !presses.clone().all(|x| x >= 0) {
-            return false;
-        }
+    fn check_solution_signed<P: Clone + Iterator<Item = isize>>(&self, mut presses: P) -> bool {
         (0..self.joltage.len()).all(|i| {
             let sum = presses
                 .clone()
                 .zip(self.buttons.iter())
                 .filter(|(_, b)| b.contains(&i))
                 .map(|(p, _)| p)
-                .sum::<isize>() as usize;
+                .sum::<isize>()
+                .cast_unsigned();
             let j = self.joltage[i];
             if sum != j {
                 return false;
             }
             true
-        })
+        }) && presses.all(|x| x >= 0)
     }
 
     fn solve(&self) -> Option<usize> {
@@ -174,13 +172,13 @@ impl Problem {
                 break;
             }
             let missing_values = iter.state();
-            let Some(answer) = matrix.solve_with_unknowns(&missing_values) else {
+            let Some(answer) = matrix.solve_with_unknowns(missing_values) else {
                 continue;
             };
             if !self.check_solution_signed(answer.iter().copied()) {
                 continue;
             }
-            let sum: usize = answer.iter().map(|x| *x as usize).sum();
+            let sum: usize = answer.iter().map(|x| x.cast_unsigned()).sum();
             if sum != n {
                 continue;
             }
@@ -201,13 +199,13 @@ impl Problem {
                 break;
             }
             let missing_values = iter.state();
-            let Some(answer) = matrix.solve_with_unknowns(&missing_values) else {
+            let Some(answer) = matrix.solve_with_unknowns(missing_values) else {
                 continue;
             };
             if !self.check_solution_signed(answer.iter().copied()) {
                 continue;
             }
-            let sum: usize = answer.iter().map(|x| *x as usize).sum();
+            let sum: usize = answer.iter().map(|x| x.cast_unsigned()).sum();
             return Some(sum);
         }
         None
