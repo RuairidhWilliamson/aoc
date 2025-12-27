@@ -1,6 +1,7 @@
 use std::iter::FusedIterator;
 
 /// [`IntegerIter`] is an iterator that iterates over the space of 0 or positive integers in N dimensions.
+///
 /// It guarantees that the sum of the vector is monotonic meaning it either increases or stays the step at each iteration. It never decreases.
 /// The implementation of [`Iterator`] requires a copy so use the other methods if you want to avoid extra allocations/memcpy.
 ///

@@ -166,7 +166,7 @@ impl Solver<'_> {
                 }
                 if connected_count < self.min_shape_area() {
                     unoccupiable_region_area += connected_count;
-                    if !(vacant_area - unoccupiable_region_area >= total_area_of_shapes_to_add) {
+                    if vacant_area - unoccupiable_region_area < total_area_of_shapes_to_add {
                         return false;
                     }
                 }
