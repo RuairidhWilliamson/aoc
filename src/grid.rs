@@ -3,7 +3,7 @@ use std::{
     ops::{Deref, DerefMut, Index, IndexMut},
 };
 
-use crate::magic_iter::MagicIterVec;
+use crate::integer_iter::IntegerIter;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Point {
@@ -413,7 +413,7 @@ impl AugmentedMatrix<isize> {
     /// Must be called with the matrix in row echelon form
     pub fn solve_indeterminate(&self) -> impl Iterator<Item = Vec<isize>> {
         let missing = (self.width - 1).saturating_sub(self.rank());
-        MagicIterVec::new(missing)
+        IntegerIter::new_vec(missing)
             .filter_map(move |missing_values| self.solve_with_unknowns(&missing_values))
     }
 }

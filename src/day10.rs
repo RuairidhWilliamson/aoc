@@ -3,7 +3,7 @@ use rayon::iter::{IntoParallelRefIterator as _, ParallelBridge as _, ParallelIte
 use crate::{
     env_is_enabled,
     grid::{AugmentedMatrix, Grid},
-    magic_iter::MagicIterVec,
+    integer_iter::IntegerIter,
 };
 
 pub fn part1(input: &str) -> u32 {
@@ -180,7 +180,7 @@ impl Problem {
         matrix.remove_trailing_zero_rows();
         let max_joltage = self.max_joltage();
         let missing = (matrix.width() - 1).saturating_sub(matrix.rank());
-        let mut iter = MagicIterVec::new(missing);
+        let mut iter = IntegerIter::new_vec(missing);
         while iter.update_next() {
             if iter.monotonic_sum() > max_joltage || iter.monotonic_sum() > n {
                 break;
@@ -208,7 +208,7 @@ impl Problem {
 
         let max_joltage = self.max_joltage();
         let missing = (matrix.width() - 1).saturating_sub(matrix.rank());
-        let mut iter = MagicIterVec::new(missing);
+        let mut iter = IntegerIter::new_vec(missing);
         while iter.update_next() {
             if iter.monotonic_sum() > max_joltage {
                 break;

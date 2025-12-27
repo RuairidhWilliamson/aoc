@@ -58,7 +58,7 @@ impl<'a> AsciiGrid<'a> {
     }
 
     /// # Safety
-    /// x < width and y < height
+    /// Parameters must be `x < width` and `y < height` or UB
     pub unsafe fn get_unchecked(&self, x: usize, y: usize) -> u8 {
         debug_assert!(x < self.width);
         debug_assert!(y < self.height);
@@ -79,7 +79,7 @@ impl<'a> AsciiGrid<'a> {
     }
 
     /// # Safety
-    /// x < width and y < height
+    /// Parameters must be `x < width` and `y < height` or UB
     pub unsafe fn set_unchecked(&mut self, x: usize, y: usize, c: u8) {
         debug_assert!(x < self.width);
         debug_assert!(y < self.height);

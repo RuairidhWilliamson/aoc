@@ -1,6 +1,6 @@
 pub mod ascii_grid;
 pub mod grid;
-pub mod magic_iter;
+pub mod integer_iter;
 
 pub mod day01;
 pub mod day02;

@@ -15,7 +15,6 @@ strip = false
 
 [dependencies]
 itertools = "0.14.0"
-kdam = { version = "0.6.3", features = ["rayon"] }
 num = "0.4.3"
 rayon = "1.11.0"
 

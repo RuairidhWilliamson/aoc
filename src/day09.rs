@@ -27,6 +27,14 @@ pub fn part1(input: &str) -> usize {
         .unwrap()
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Cell {
+    Empty,
+    Edge,
+    Vertex,
+    Face,
+}
+
 pub fn part2(input: &str) -> usize {
     let points: Vec<Point> = input
         .lines()
@@ -41,24 +49,24 @@ pub fn part2(input: &str) -> usize {
 
     let width = points.iter().map(|Point { x, y: _ }| *x).max().unwrap() + 1;
     let height = points.iter().map(|Point { x: _, y }| *y).max().unwrap() + 1;
-    let mut grid = Grid::new_fill(0, width, height);
+    let mut grid = Grid::new_fill(Cell::Empty, width, height);
     for i in 0..points.len() {
         let a = points[i];
         let b = points[(i + 1) % points.len()];
-        grid.set_rect(a, b, 1);
+        grid.set_rect(a, b, Cell::Edge);
     }
 
     for p in &points {
-        grid.set_point(*p, 2);
+        grid.set_point(*p, Cell::Vertex);
     }
 
-    fill_inner(&mut grid, 3);
+    fill_inner(&mut grid);
 
     let predicate = |(a, b): &(Point, Point)| {
         // Remove obviously wrong rects
         let obvious_check = a
             .rect_edges_iter(b)
-            .all(|p| unsafe { grid.get_point_unchecked(p) } != 0);
+            .all(|p| unsafe { grid.get_point_unchecked(p) } != Cell::Empty);
         obvious_check
             && points
                 .iter()
@@ -71,7 +79,7 @@ pub fn part2(input: &str) -> usize {
                         Point { x: x - 1, y: y + 1 },
                     ]
                 })
-                .all(|p| !a.rect_contains(b, &p) || grid.get_point(p) != Some(0))
+                .all(|p| !a.rect_contains(b, &p) || grid.get_point(p) != Some(Cell::Empty))
     };
     if env_is_enabled("NO_RAYON") {
         points
@@ -94,24 +102,24 @@ pub fn part2(input: &str) -> usize {
     }
 }
 
-pub fn fill_inner(grid: &mut Grid<u8>, set_value: u8) {
+fn fill_inner(grid: &mut Grid<Cell>) {
     let iter = grid.get_all_rows_mut();
-    let fill_row = |row: &mut [u8]| {
+    let fill_row = |row: &mut [Cell]| {
         let mut inside = false;
         let mut edge = false;
         for v in row {
-            match v {
-                2 => {
+            match *v {
+                Cell::Vertex => {
                     edge = !edge;
                     if !edge {
                         inside = !inside;
                     }
                 }
-                1 if !edge => {
+                Cell::Edge if !edge => {
                     inside = !inside;
                 }
-                0 if inside && !edge => {
-                    *v = set_value;
+                Cell::Empty if inside && !edge => {
+                    *v = Cell::Face;
                 }
                 _ => {}
             }
