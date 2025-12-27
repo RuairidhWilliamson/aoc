@@ -1,4 +1,12 @@
-use crate::grid::{Grid, Point};
+use rayon::iter::{
+    IndexedParallelIterator as _, IntoParallelRefIterator as _, ParallelBridge as _,
+    ParallelIterator as _,
+};
+
+use crate::{
+    env_is_enabled,
+    grid::{Grid, Point},
+};
 
 pub fn part1(input: &str) -> usize {
     let points: Vec<Point> = input
@@ -46,17 +54,13 @@ pub fn part2(input: &str) -> usize {
 
     fill_inner(&mut grid, 3);
 
-    points
-        .iter()
-        .enumerate()
-        .flat_map(|(i, a)| points[..i].iter().map(move |b| (*a, *b)))
-        .filter(|(a, b)| {
-            // Remove obviously wrong rects
-            a.rect_edges_iter(b)
-                .all(|p| unsafe { grid.get_unchecked(p) } != 0)
-        })
-        .filter(|(a, b)| {
-            points
+    let predicate = |(a, b): &(Point, Point)| {
+        // Remove obviously wrong rects
+        let obvious_check = a
+            .rect_edges_iter(b)
+            .all(|p| unsafe { grid.get_unchecked(p) } != 0);
+        obvious_check
+            && points
                 .iter()
                 .filter(|p| a.rect_contains(b, p))
                 .flat_map(|Point { x, y }| {
@@ -68,18 +72,34 @@ pub fn part2(input: &str) -> usize {
                     ]
                 })
                 .all(|p| !a.rect_contains(b, &p) || grid.get_point(p) != Some(0))
-        })
-        .map(|(a, b)| a.area(&b))
-        .max()
-        .unwrap()
+    };
+    if env_is_enabled("NO_RAYON") {
+        points
+            .iter()
+            .enumerate()
+            .flat_map(|(i, a)| points[..i].iter().map(move |b| (*a, *b)))
+            .filter(predicate)
+            .map(|(a, b)| a.area(&b))
+            .max()
+            .unwrap()
+    } else {
+        points
+            .par_iter()
+            .enumerate()
+            .flat_map(|(i, a)| points[..i].par_iter().map(move |b| (*a, *b)))
+            .filter(predicate)
+            .map(|(a, b)| a.area(&b))
+            .max()
+            .unwrap()
+    }
 }
 
 pub fn fill_inner(grid: &mut Grid<u8>, set_value: u8) {
-    for y in 0..grid.height() {
+    let iter = grid.get_all_rows_mut();
+    let fill_row = |row: &mut [u8]| {
         let mut inside = false;
         let mut edge = false;
-        for x in 0..grid.width() {
-            let v = unsafe { grid.get_unchecked(Point { x, y }) };
+        for v in row {
             match v {
                 2 => {
                     edge = !edge;
@@ -91,10 +111,15 @@ pub fn fill_inner(grid: &mut Grid<u8>, set_value: u8) {
                     inside = !inside;
                 }
                 0 if inside && !edge => {
-                    grid.set_unchecked(Point { x, y }, set_value);
+                    *v = set_value;
                 }
                 _ => {}
             }
         }
+    };
+    if env_is_enabled("NO_RAYON") {
+        iter.for_each(fill_row);
+    } else {
+        iter.par_bridge().for_each(fill_row);
     }
 }

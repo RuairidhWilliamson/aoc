@@ -170,6 +170,15 @@ impl<T: Copy> Grid<T> {
         &self.cells[y * self.width..(y + 1) * self.width]
     }
 
+    pub fn get_row_mut(&mut self, y: usize) -> &mut [T] {
+        assert!(y < self.height);
+        &mut self.cells[y * self.width..(y + 1) * self.width]
+    }
+
+    pub fn get_all_rows_mut(&mut self) -> std::slice::ChunksExactMut<'_, T> {
+        self.cells.chunks_exact_mut(self.width)
+    }
+
     pub fn add_row(&mut self, row: &[T]) {
         assert_eq!(row.len(), self.width);
         self.cells.extend_from_slice(row);
