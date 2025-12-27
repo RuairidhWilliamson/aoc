@@ -137,6 +137,8 @@ impl Solver<'_> {
         let mut unoccupiable_region_area = 0;
         let mut visited = Grid::<bool>::new_fill(false, self.grid.width(), self.grid.height());
         let mut to_visit = Vec::new();
+        let vacant_area = self.vacant_area();
+        let total_area_of_shapes_to_add = self.total_area_of_shapes_to_add();
         for y in 0..self.grid.height() {
             for x in 0..self.grid.width() {
                 debug_assert!(to_visit.is_empty());
@@ -164,10 +166,13 @@ impl Solver<'_> {
                 }
                 if connected_count < self.min_shape_area() {
                     unoccupiable_region_area += connected_count;
+                    if !(vacant_area - unoccupiable_region_area >= total_area_of_shapes_to_add) {
+                        return false;
+                    }
                 }
             }
         }
-        self.vacant_area() - unoccupiable_region_area >= self.total_area_of_shapes_to_add()
+        vacant_area - unoccupiable_region_area >= total_area_of_shapes_to_add
     }
 
     fn visit(&mut self, last_placement: Option<&Placement>) -> bool {
