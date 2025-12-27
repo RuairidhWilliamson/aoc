@@ -1,7 +1,9 @@
 use std::{
     fmt::Write as _,
-    ops::{Index, IndexMut},
+    ops::{Deref, DerefMut, Index, IndexMut},
 };
+
+use crate::magic_iter::MagicIterVec;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Point {
@@ -208,7 +210,7 @@ impl<T: std::fmt::Debug + Copy> Grid<T> {
         let mut out = String::new();
         for y in 0..self.height {
             for x in 0..self.width {
-                write!(&mut out, "{:>4?}", self.get_point(Point { x, y }).unwrap()).unwrap();
+                write!(&mut out, "{:>10?}", self.get_point(Point { x, y }).unwrap()).unwrap();
             }
             out.push('\n');
         }
@@ -253,4 +255,198 @@ impl Grid<f32> {
             }
         }
     }
+}
+
+#[derive(Clone)]
+pub struct AugmentedMatrix<T>(pub Grid<T>);
+
+impl Deref for AugmentedMatrix<isize> {
+    type Target = Grid<isize>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for AugmentedMatrix<isize> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl AugmentedMatrix<isize> {
+    pub fn fix_leading_principles(&mut self) {
+        let n = self.0.width;
+        let m = self.0.height;
+        'outer: for k in 0..(n - 1).min(m - 1) {
+            if self.0.get(k, k).unwrap() == 0 {
+                for j in (k + 1)..m {
+                    if self.0.get(k, j).unwrap() != 0 {
+                        self.0.swap_rows(k, j);
+                        continue 'outer;
+                    }
+                }
+                panic!("uh oh")
+            }
+        }
+    }
+
+    pub fn bareiss(&mut self) {
+        let m = self.0.height;
+        let n = self.0.width;
+        let mut prev = 1;
+        for k in 0..(n - 1).min(m - 1) {
+            if self.0[(k, k)] == 0 {
+                for i in (k + 1)..m {
+                    if self.0[(k, i)] != 0 {
+                        self.0.swap_rows(k, i);
+                        break;
+                    }
+                }
+            }
+            let pivot = self.0[(k, k)];
+            for i in (k + 1)..m {
+                for j in (k + 1)..n {
+                    let numerator = self.0[(j, i)] * pivot - self.0[(k, i)] * self.0[(j, k)];
+                    let divisor = prev;
+                    if divisor == 0 {
+                        // eprintln!("did not finish");
+                        return;
+                    }
+                    let value = numerator / divisor;
+                    assert_eq!(numerator % divisor, 0);
+                    self.0[(j, i)] = value;
+                }
+            }
+            for i in (k + 1)..m {
+                self.0[(k, i)] = 0;
+            }
+            prev = pivot;
+        }
+        self.simplify_row_multiples();
+    }
+
+    pub fn simplify_row_multiples(&mut self) {
+        for i in 0..self.height {
+            let mut common = self[(0, i)];
+            let mut j = 1;
+            while j < self.width && common != 1 {
+                common = num::integer::gcd(common, self[(j, i)]);
+                j += 1;
+            }
+            if common != 1 && common != 0 {
+                for j in 0..self.width {
+                    self[(j, i)] /= common;
+                }
+            }
+        }
+    }
+
+    /// Calculate the rank of the matrix, assumes the matrix is in row echelon form
+    pub fn rank(&self) -> usize {
+        let mut rank = 0;
+        for i in 0..self.height {
+            if self.get_row(i).iter().any(|x| *x != 0) {
+                rank += 1;
+            }
+        }
+        rank
+    }
+
+    pub fn remove_trailing_zero_rows(&mut self) {
+        while self.0.get_row(self.0.height() - 1)[..self.0.width() - 1]
+            .iter()
+            .all(|x| *x == 0)
+        {
+            self.0.remove_last_row();
+        }
+    }
+
+    pub fn check_solution(&self, v: &[isize]) -> bool {
+        assert_eq!(v.len(), self.0.width - 1);
+        for i in 0..self.0.height {
+            let mut sum = 0;
+            for j in 0..self.0.width - 1 {
+                sum += self.0[(j, i)] * v[j];
+            }
+            if sum != self.0[(self.0.width - 1, i)] {
+                return false;
+            }
+        }
+        true
+    }
+
+    pub fn normalize_diagonal(&mut self) {
+        for i in 0..self.height.min(self.width - 1) {
+            if self[(i, i)] < 0 {
+                for j in 0..self.width {
+                    self[(j, i)] *= -1;
+                }
+            }
+        }
+    }
+
+    /// Must be called with the matrix in row echelon form
+    pub fn solve(&self) -> Option<Vec<isize>> {
+        if self.rank() < self.0.width - 1 {
+            return None;
+        }
+        let mut answer = vec![None; self.0.width - 1];
+        for i in (0..self.0.width - 1).rev() {
+            let denominator = self.0[(i, i)];
+            if denominator == 0 {
+                return None;
+            }
+            let mut sum = 0;
+            for j in i + 1..self.0.width - 1 {
+                sum += answer[j]? * self.0[(j, i)];
+            }
+            let numerator = self.0[(self.0.width - 1, i)] - sum;
+            if numerator % denominator != 0 {
+                return None;
+            }
+            answer[i] = Some(numerator / denominator);
+        }
+        let answer: Option<Vec<isize>> = answer.into_iter().map(|x| x).collect();
+        return answer;
+    }
+
+    pub fn solve_with_unknowns(&self, mut unknowns: &[usize]) -> Option<Vec<isize>> {
+        let mut matrix = self.clone();
+        for i in 0..matrix.width - 1 {
+            if i >= matrix.height || matrix[(i, i)] == 0 {
+                let mut v = vec![0; self.width];
+                v[self.width - 1] = unknowns[0] as isize;
+                unknowns = &unknowns[1..];
+                v[i] = 1;
+                matrix.add_row(&v);
+                matrix.bareiss();
+            }
+        }
+        assert!(unknowns.is_empty());
+        matrix.solve()
+    }
+
+    /// Must be called with the matrix in row echelon form
+    pub fn solve_indeterminate(&self) -> impl Iterator<Item = Vec<isize>> {
+        let missing = (self.width - 1).saturating_sub(self.rank());
+        MagicIterVec::new(missing)
+            .filter_map(move |missing_values| self.solve_with_unknowns(&missing_values))
+    }
+}
+
+#[test]
+fn test_bareiss_solve() {
+    let mut grid = Grid::new_fill(0isize, 4, 0);
+    grid.add_row(&[1, 2, -1, 7]);
+    grid.add_row(&[2, -3, -4, -3]);
+    grid.add_row(&[1, 1, 1, 0]);
+    let mut augmented_matrix = AugmentedMatrix(grid);
+    let initial = augmented_matrix.clone();
+    augmented_matrix.bareiss();
+    println!("{}", augmented_matrix.0.display());
+    assert_eq!(augmented_matrix.rank(), 3);
+    let answer = augmented_matrix.solve().unwrap();
+    assert!(augmented_matrix.check_solution(&answer));
+    assert!(initial.check_solution(&answer));
 }

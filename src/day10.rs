@@ -1,11 +1,7 @@
-use itertools::{Itertools as _, repeat_n};
-use rayon::iter::{
-    IndexedParallelIterator as _, IntoParallelIterator as _, ParallelBridge, ParallelIterator as _,
+use crate::{
+    grid::{AugmentedMatrix, Grid},
+    magic_iter::MagicIterVec,
 };
-
-use crate::grid::Grid;
-
-const FUDGE_TOLERANCE: f32 = 0.01;
 
 pub fn part1(input: &str) -> u32 {
     input
@@ -19,189 +15,12 @@ pub fn part2(input: &str) -> usize {
     input
         .lines()
         .map(Problem::parse_line)
-        .map(|problem| problem.solve_please())
-        .sum()
-}
-
-struct Problem {
-    buttons: Vec<Vec<usize>>,
-    joltage: Vec<usize>,
-}
-
-impl Problem {
-    fn parse_line(line: &str) -> Self {
-        let (_goal, rest) = line.split_once(' ').unwrap();
-        let (rest, joltage) = rest.rsplit_once(' ').unwrap();
-        let joltage: Vec<_> = joltage
-            .strip_prefix('{')
-            .unwrap()
-            .strip_suffix('}')
-            .unwrap()
-            .split(',')
-            .map(|j| j.parse().unwrap())
-            .collect();
-        let buttons: Vec<Vec<_>> = rest
-            .trim()
-            .split(' ')
-            .map(|buttons| {
-                buttons
-                    .trim()
-                    .strip_prefix('(')
-                    .unwrap()
-                    .strip_suffix(')')
-                    .unwrap()
-                    .split(',')
-                    .map(|b| b.parse().unwrap())
-                    .collect()
-            })
-            .collect();
-        Self { buttons, joltage }
-    }
-
-    fn check_solution_unsigned(&self, presses: impl Clone + Iterator<Item = usize>) -> bool {
-        (0..self.joltage.len()).all(|i| {
-            let sum = presses
-                .clone()
-                .zip(self.buttons.iter())
-                .filter(|(_, b)| b.contains(&i))
-                .map(|(p, _)| p)
-                .sum::<usize>() as usize;
-            let j = self.joltage[i];
-            if sum != j {
-                return false;
-            }
-            true
+        .map(|problem| {
+            let answer = problem.solve();
+            println!("{answer:?}");
+            answer.iter().copied().sum::<isize>() as usize
         })
-    }
-
-    fn solve_please(&self) -> usize {
-        let matrix = self.build_matrix();
-        let a_bad_solution = self.find_any_solution(&matrix).unwrap();
-        assert!(self.check_solution_unsigned(a_bad_solution.iter().copied()));
-        let total = a_bad_solution.iter().sum::<usize>();
-        let max = self.joltage.iter().copied().max().unwrap();
-        if let Some(solution) = (max..total)
-            .into_par_iter()
-            .rev()
-            .find_map_last(|n| self.can_solve_n(&matrix, n as f32))
-        {
-            assert!(
-                self.check_solution_unsigned(solution.iter().copied()),
-                "found a bad solution"
-            );
-            solution.iter().sum()
-        } else {
-            total
-        }
-    }
-
-    fn build_matrix(&self) -> Grid<f32> {
-        let mut matrix = Grid::<f32>::new_fill(0.0, self.buttons.len() + 1, self.joltage.len());
-        for (i, buttons) in self.buttons.iter().enumerate() {
-            for b in buttons {
-                matrix[(i, *b)] = 1.0;
-            }
-        }
-        for (i, x) in self.joltage.iter().enumerate() {
-            matrix[(self.buttons.len(), i)] = *x as f32;
-        }
-        matrix.guassian_elimination();
-        matrix.reduced_row_echelon();
-        matrix
-    }
-
-    fn find_any_solution(&self, matrix: &Grid<f32>) -> Option<Vec<usize>> {
-        self.search_indeteriminate_matrix_solutions(matrix)
-    }
-
-    fn can_solve_n(&self, matrix: &Grid<f32>, n: f32) -> Option<Vec<usize>> {
-        let mut matrix = matrix.clone();
-        let mut v = vec![1.0; matrix.width()];
-        v[matrix.width() - 1] = n;
-        matrix.add_row(&v);
-        self.search_indeteriminate_matrix_solutions(&matrix)
-    }
-
-    fn search_indeteriminate_matrix_solutions(&self, matrix: &Grid<f32>) -> Option<Vec<usize>> {
-        let mut matrix = matrix.clone();
-        let v = vec![0.0; matrix.width()];
-        while matrix.height() < matrix.width() - 1 {
-            matrix.add_row(&v);
-        }
-        matrix.guassian_elimination();
-        matrix.reduced_row_echelon();
-        let max = self.joltage.iter().sum::<usize>() as usize;
-        let mut missing = 0;
-        {
-            let mut matrix = matrix.clone();
-            'outer: loop {
-                for i in 0..matrix.width() - 1 {
-                    if (matrix[(i, i)] - 1.0).abs() > f32::EPSILON {
-                        let mut v = vec![0.0; matrix.width()];
-                        v[i] = 1.0;
-                        v[matrix.width() - 1] = 6.0;
-                        matrix.add_row(&v);
-                        matrix.guassian_elimination();
-                        matrix.reduced_row_echelon();
-                        missing += 1;
-                        continue 'outer;
-                    }
-                }
-                break;
-            }
-        }
-        self.search_indeterminate_solutions_inner(matrix, max, missing)
-    }
-
-    fn search_indeterminate_solutions_inner(
-        &self,
-        matrix: Grid<f32>,
-        max: usize,
-        missing: usize,
-    ) -> Option<Vec<usize>> {
-        repeat_n(0..=max, missing)
-            .multi_cartesian_product()
-            .par_bridge()
-            .map(|indeterminates| {
-                let mut matrix = matrix.clone();
-                let mut missing = 0;
-                'outer: loop {
-                    for i in 0..matrix.width() - 1 {
-                        if (matrix[(i, i)] - 1.0).abs() > f32::EPSILON {
-                            let mut v = vec![0.0; matrix.width()];
-                            v[i] = 1.0;
-                            v[matrix.width() - 1] = indeterminates[missing] as f32;
-                            matrix.add_row(&v);
-                            matrix.guassian_elimination();
-                            matrix.reduced_row_echelon();
-                            missing += 1;
-                            continue 'outer;
-                        }
-                    }
-                    break;
-                }
-                let mut answer = vec![0.0; matrix.width() - 1];
-                for i in (0..matrix.width() - 1).rev() {
-                    let s: f32 = (i..matrix.width() - 1)
-                        .map(|j| answer[j] * matrix[(j, i)])
-                        .sum();
-                    let value = (matrix[(matrix.width() - 1, i)] - s) / matrix[(i, i)];
-                    let rounded_value = value.round();
-                    if value < -0.01 || (rounded_value - value).abs() > FUDGE_TOLERANCE {
-                        return None;
-                    }
-                    answer[i] = rounded_value;
-                }
-                #[expect(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-                let answer = answer.into_iter().map(|b| b as usize);
-                if self.check_solution_unsigned(answer.clone()) {
-                    return Some(answer.collect());
-                }
-                None
-            })
-            .find_any(Option::is_some)
-            .flatten()
-    }
+        .sum()
 }
 
 struct Machine {
@@ -273,4 +92,135 @@ impl State {
     fn press(self, s: Self) -> Self {
         Self(self.0 ^ s.0)
     }
+}
+
+struct Problem {
+    buttons: Vec<Vec<usize>>,
+    joltage: Vec<usize>,
+}
+
+impl Problem {
+    fn parse_line(line: &str) -> Self {
+        println!("{line}");
+        let (_goal, rest) = line.split_once(' ').unwrap();
+        let (rest, joltage) = rest.rsplit_once(' ').unwrap();
+        let joltage: Vec<_> = joltage
+            .strip_prefix('{')
+            .unwrap()
+            .strip_suffix('}')
+            .unwrap()
+            .split(',')
+            .map(|j| j.parse().unwrap())
+            .collect();
+        let buttons: Vec<Vec<_>> = rest
+            .trim()
+            .split(' ')
+            .map(|buttons| {
+                buttons
+                    .trim()
+                    .strip_prefix('(')
+                    .unwrap()
+                    .strip_suffix(')')
+                    .unwrap()
+                    .split(',')
+                    .map(|b| b.parse().unwrap())
+                    .collect()
+            })
+            .collect();
+        Self { buttons, joltage }
+    }
+
+    fn check_solution_signed(&self, presses: impl Clone + Iterator<Item = isize>) -> bool {
+        if !presses.clone().all(|x| x >= 0) {
+            return false;
+        }
+        (0..self.joltage.len()).all(|i| {
+            let sum = presses
+                .clone()
+                .zip(self.buttons.iter())
+                .filter(|(_, b)| b.contains(&i))
+                .map(|(p, _)| p)
+                .sum::<isize>() as usize;
+            let j = self.joltage[i];
+            if sum != j {
+                return false;
+            }
+            true
+        })
+    }
+
+    fn solve(&self) -> Vec<isize> {
+        struct Solution {
+            answer: Vec<isize>,
+            sum: isize,
+            missing_sum: usize,
+        }
+        let mut matrix = self.build_matrix_new();
+        matrix.bareiss();
+        matrix.remove_trailing_zero_rows();
+        let mut best: Option<Solution> = None;
+        let mut largest_missing = 0;
+        let missing = (matrix.width() - 1).saturating_sub(matrix.rank());
+        let mut iter = MagicIterVec::new(missing);
+        while iter.update_next() {
+            let missing_values = iter.state();
+            if largest_missing < iter.monotonic_sum() {
+                if iter.monotonic_sum() > self.max_joltage() {
+                    break;
+                }
+                if let Some(best) = best.as_ref() {
+                    if best.missing_sum + 10 < iter.monotonic_sum() {
+                        // break once the monotonic sum increases and we are not finding solutions
+                        break;
+                    }
+                }
+                largest_missing = iter.monotonic_sum();
+            }
+            let Some(answer) = matrix.solve_with_unknowns(&missing_values) else {
+                continue;
+            };
+            if !self.check_solution_signed(answer.iter().copied()) {
+                continue;
+            }
+            let sum: isize = answer.iter().copied().sum();
+            if best.as_ref().is_none_or(|best| sum < best.sum) {
+                best = Some(Solution {
+                    answer,
+                    sum: sum,
+                    missing_sum: iter.monotonic_sum(),
+                });
+            }
+        }
+        best.unwrap().answer
+    }
+
+    fn max_joltage(&self) -> usize {
+        self.joltage.iter().copied().max().unwrap()
+    }
+
+    fn build_matrix_new(&self) -> AugmentedMatrix<isize> {
+        let mut matrix = Grid::<isize>::new_fill(0, self.buttons.len() + 1, self.joltage.len());
+        for (i, buttons) in self.buttons.iter().enumerate() {
+            for b in buttons {
+                matrix[(i, *b)] = 1;
+            }
+        }
+        for (i, x) in self.joltage.iter().enumerate() {
+            matrix[(self.buttons.len(), i)] = *x as isize;
+        }
+        AugmentedMatrix(matrix)
+    }
+}
+
+#[test]
+fn try_part2_integer() {
+    let input = "[#####.###.] (4,7,8) (0,1,2,3,5,6,8,9) (0,4,5,7,8,9) (2,3,5) (0,2,3,4,5,6,7,8) (5,6) (0,1,2,3,4,5,9) (0,1,2,5,6,9) (0,3,4,5,6,7,8,9) (3,4,5,6,8) (0,1,2,3,4,5,6,7,9) (0,8) (3,4,8,9) {261,225,243,252,56,278,262,29,257,242}";
+    let problem = Problem::parse_line(input);
+    let mut matrix = problem.build_matrix_new();
+    assert!(matrix.check_solution(&[0, 203, 7, 0, 18, 12, 9, 13, 4, 12, 0, 7, 6]));
+    println!("{}", matrix.display());
+    matrix.bareiss();
+    println!("{}", matrix.display());
+    let solution = matrix.solve_with_unknowns(&[0, 7, 6]).unwrap();
+    assert!(problem.check_solution_signed(solution.iter().copied()));
 }

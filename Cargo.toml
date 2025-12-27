@@ -16,6 +16,7 @@ strip = false
 [dependencies]
 itertools = "0.14.0"
 kdam = { version = "0.6.3", features = ["rayon"] }
+num = "0.4.3"
 rayon = "1.11.0"
 
 [dev-dependencies]
@@ -54,4 +55,3 @@ map_unwrap_or = "allow"
 unnecessary_debug_formatting = "allow"
 missing_panics_doc = "allow"
 cast_possible_wrap = "allow"
-
